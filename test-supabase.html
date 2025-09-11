@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Connection Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>🔍 Testing Supabase Connection</h1>
+    <div id="result"></div>
+    
+    <script>
+        const supabaseUrl = 'https://czzpkrtlujpejuzhdnnr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6enBrcnRsdWpwZWp1emhkbm5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDg3NzksImV4cCI6MjA2ODIyNDc3OX0.HIzKIGPXhKEk0iMkMt7R_zQul616PruCQu7XORjQeQs';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🔄 Testing connection...</p>';
+            
+            try {
+                // Test basic connection
+                const { data, error } = await supabase.from('jobs').select('count').limit(1);
+                
+                if (error) {
+                    resultDiv.innerHTML = `
+                        <p>❌ Connection failed: ${error.message}</p>
+                        <h3>💡 You need to run the database schema first!</h3>
+                        <ol>
+                            <li>Go to: <a href="https://supabase.com/dashboard" target="_blank">https://supabase.com/dashboard</a></li>
+                            <li>Select your project: czzpkrtlujpejuzhdnnr</li>
+                            <li>Go to SQL Editor</li>
+                            <li>Copy and paste the contents of supabase-schema.sql</li>
+                            <li>Click "Run" to create all tables</li>
+                        </ol>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p>✅ Supabase connection successful!</p>
+                        <p>🎉 Your database is ready to use!</p>
+                        <p>🚀 Your IKF Recruit Suite is now fully connected!</p>
+                    `;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<p>❌ Error: ${err.message}</p>`;
+            }
+        }
+        
+        testConnection();
+    </script>
+</body>
+</html>
