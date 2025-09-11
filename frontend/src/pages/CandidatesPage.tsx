@@ -106,6 +106,7 @@ export default function CandidatesPage() {
           onShortlist={handleShortlist}
         />
       )}
+      </div>
     </div>
   );
 }
