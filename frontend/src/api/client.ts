@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ApiResponse, Job, Candidate, MatchScore, JobCreateRequest } from '../types';
+import type { ApiResponse, Job, Candidate, MatchScore, JobCreateRequest } from '../types';
 
 const api = axios.create({
   baseURL: '/api',

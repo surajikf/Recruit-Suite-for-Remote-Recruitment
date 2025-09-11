@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { JobCreateRequest } from '../types';
+import type { JobCreateRequest } from '../types';
 
 interface JobCreateFormProps {
   onSubmit: (job: JobCreateRequest) => void;

@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import JobsPage from './pages/JobsPage';
+import CandidatesPage from './pages/CandidatesPage';
 
 const queryClient = new QueryClient();
 
@@ -87,7 +88,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/jobs" element={<JobsPage />} />
-              <Route path="/candidates" element={<div className="p-8 text-center">Candidates page coming soon</div>} />
+              <Route path="/candidates" element={<CandidatesPage />} />
               <Route path="/calendar" element={<div className="p-8 text-center">Calendar page coming soon</div>} />
             </Routes>
           </main>

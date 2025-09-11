@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { jobsApi } from '../api/client';
-import { Job, JobCreateRequest } from '../types';
+import type { JobCreateRequest } from '../types';
 
 export function useJobs() {
   return useQuery({

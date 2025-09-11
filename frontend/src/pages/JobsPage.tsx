@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useJobs, useCreateJob } from '../hooks/useJobs';
-import { JobCreateRequest, Job } from '../types';
+import type { JobCreateRequest, Job } from '../types';
 import JobList from '../components/JobList';
 import JobCreateForm from '../components/JobCreateForm';
 
