@@ -9,6 +9,11 @@ const api = axios.create({
 });
 
 export const jobsApi = {
+  getAll: async (): Promise<ApiResponse<Job[]>> => {
+    const response = await api.get('/jobs');
+    return response.data;
+  },
+
   create: async (job: JobCreateRequest): Promise<ApiResponse<Job>> => {
     const response = await api.post('/jobs', job);
     return response.data;

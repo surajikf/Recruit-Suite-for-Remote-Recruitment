@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useJobs, useCreateJob } from '../hooks/useJobs';
 import type { JobCreateRequest, Job } from '../types';
 import JobList from '../components/JobList';
@@ -107,9 +108,12 @@ export default function JobsPage() {
                   >
                     Close
                   </button>
-                  <button className="px-4 py-2 bg-[#0B79D0] text-white rounded-lg hover:bg-[#0a6cb9]">
+                  <Link
+                    to={`/jobs/${selectedJob.id}/matches`}
+                    className="px-4 py-2 bg-[#0B79D0] text-white rounded-lg hover:bg-[#0a6cb9]"
+                  >
                     View Matches
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

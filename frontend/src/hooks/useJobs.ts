@@ -6,9 +6,8 @@ export function useJobs() {
   return useQuery({
     queryKey: ['jobs'],
     queryFn: async () => {
-      // For now, return empty array since we don't have a list endpoint yet
-      // In a real app, this would call jobsApi.getAll()
-      return [];
+      const response = await jobsApi.getAll();
+      return response.data || [];
     },
   });
 }

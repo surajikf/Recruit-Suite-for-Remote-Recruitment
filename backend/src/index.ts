@@ -11,10 +11,52 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 // Jobs endpoints (MVP stubs)
-const jobs: any[] = [];
+const jobs: any[] = [
+  {
+    id: 'job-1',
+    title: 'Senior React Developer',
+    description: 'We are looking for a senior React developer to join our team. You will be responsible for building user-facing features and components.',
+    skills: ['React', 'TypeScript', 'Node.js', 'AWS', 'Docker'],
+    location: 'Remote',
+    experience_min: 5,
+    experience_max: 10,
+    status: 'published',
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    created_by: 'admin',
+  },
+  {
+    id: 'job-2',
+    title: 'Full Stack Developer',
+    description: 'Join our growing team as a full stack developer. You will work on both frontend and backend systems.',
+    skills: ['JavaScript', 'Python', 'Django', 'PostgreSQL', 'Redis'],
+    location: 'New York, NY',
+    experience_min: 3,
+    experience_max: 7,
+    status: 'published',
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    created_by: 'admin',
+  },
+  {
+    id: 'job-3',
+    title: 'Frontend Developer',
+    description: 'We need a frontend developer to help us build beautiful user interfaces.',
+    skills: ['Vue.js', 'CSS', 'Figma', 'Webpack', 'JavaScript'],
+    location: 'San Francisco, CA',
+    experience_min: 2,
+    experience_max: 5,
+    status: 'draft',
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    created_by: 'admin',
+  }
+];
+
+app.get('/api/jobs', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', data: jobs, errors: [] });
+});
+
 app.post('/api/jobs', (req: Request, res: Response) => {
-  const id = String(jobs.length + 1);
-  const job = { id, status: 'draft', created_at: new Date().toISOString(), ...req.body };
+  const id = `job-${Date.now()}`;
+  const job = { id, status: 'draft', created_at: new Date().toISOString(), created_by: 'admin', ...req.body };
   jobs.push(job);
   res.status(201).json({ status: 'ok', data: job, errors: [] });
 });
@@ -95,14 +137,71 @@ app.get('/api/candidates', (_req: Request, res: Response) => {
 
 // Matches (mock scoring)
 app.get('/api/jobs/:id/matches', (req: Request, res: Response) => {
+  const jobId = req.params.id;
   const threshold = Number(req.query.threshold ?? 70);
-  const result = candidates
-    .map(c => ({
-      candidate: c,
-      match_score: Math.floor(60 + Math.random() * 40),
-      breakdown: { skills: 30, experience: 30, location: 20, role_fit: 20 }
-    }))
-    .filter(m => m.match_score >= threshold);
+  
+  const job = jobs.find(j => j.id === jobId);
+  if (!job) {
+    return res.status(404).json({ status: 'error', data: null, errors: [{ code: 'JOB_NOT_FOUND' }] });
+  }
+
+  const result = candidates.map(candidate => {
+    // Calculate skill match
+    const jobSkills = job.skills || [];
+    const candidateSkills = candidate.skills || [];
+    const matchingSkills = jobSkills.filter(skill => 
+      candidateSkills.some(cs => cs.toLowerCase().includes(skill.toLowerCase()) || skill.toLowerCase().includes(cs.toLowerCase()))
+    );
+    const skillScore = jobSkills.length > 0 ? (matchingSkills.length / jobSkills.length) * 100 : 0;
+
+    // Calculate experience match
+    const candidateExp = candidate.experience_years || 0;
+    const minExp = job.experience_min || 0;
+    const maxExp = job.experience_max || 10;
+    let expScore = 0;
+    if (candidateExp >= minExp && candidateExp <= maxExp) {
+      expScore = 100;
+    } else if (candidateExp < minExp) {
+      expScore = Math.max(0, (candidateExp / minExp) * 80);
+    } else {
+      expScore = Math.max(0, 100 - ((candidateExp - maxExp) / maxExp) * 50);
+    }
+
+    // Calculate location match (simplified)
+    const locationScore = job.location === 'Remote' ? 100 : 80;
+
+    // Calculate role fit (based on job title keywords)
+    const jobTitle = job.title.toLowerCase();
+    const candidateSkillsLower = candidateSkills.map(s => s.toLowerCase());
+    let roleFitScore = 50; // Base score
+    if (jobTitle.includes('react') && candidateSkillsLower.some(s => s.includes('react'))) roleFitScore += 30;
+    if (jobTitle.includes('full stack') && candidateSkillsLower.length >= 4) roleFitScore += 20;
+    if (jobTitle.includes('frontend') && candidateSkillsLower.some(s => ['css', 'html', 'javascript', 'vue', 'angular'].includes(s))) roleFitScore += 20;
+    if (jobTitle.includes('backend') && candidateSkillsLower.some(s => ['python', 'java', 'node', 'django', 'spring'].includes(s))) roleFitScore += 20;
+    roleFitScore = Math.min(100, roleFitScore);
+
+    // Calculate overall score
+    const overallScore = Math.round(
+      (skillScore * 0.4) + 
+      (expScore * 0.3) + 
+      (locationScore * 0.1) + 
+      (roleFitScore * 0.2)
+    );
+
+    return {
+      candidate,
+      match_score: Math.max(0, Math.min(100, overallScore)),
+      breakdown: {
+        skills: Math.round(skillScore),
+        experience: Math.round(expScore),
+        location: Math.round(locationScore),
+        role_fit: Math.round(roleFitScore)
+      }
+    };
+  })
+  .filter(m => m.match_score >= threshold)
+  .sort((a, b) => b.match_score - a.match_score);
+
   res.json({ status: 'ok', data: result, errors: [] });
 });
 
