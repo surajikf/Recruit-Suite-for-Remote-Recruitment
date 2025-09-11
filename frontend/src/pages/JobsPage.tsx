@@ -34,11 +34,12 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Jobs</h1>
-        <p className="text-slate-600">Manage your job postings and track applications</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-text mb-2">Job Management</h1>
+          <p className="text-muted text-lg">Create, manage, and track your job postings</p>
+        </div>
 
       <JobList
         jobs={jobs}
@@ -120,6 +121,7 @@ export default function JobsPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
