@@ -4,6 +4,7 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { supabase } from './lib/supabase';
+import { geminiService } from './lib/gemini';
 import type { User } from '@supabase/supabase-js';
 
 const app = express();
@@ -182,7 +183,7 @@ app.post('/api/candidates', async (req: Request, res: Response) => {
   }
 });
 
-// Upload resumes and create candidates
+// Upload resumes and create candidates with AI processing
 app.post('/api/upload/resumes', upload.array('files'), async (req: Request, res: Response) => {
   try {
     const files = (req.files as Express.Multer.File[]) || [];
@@ -198,22 +199,48 @@ app.post('/api/upload/resumes', upload.array('files'), async (req: Request, res:
       fs.writeFileSync(localPath, file.buffer);
       const publicUrl = `${publicBaseUrl}/uploads/resumes/${objectPath}`;
 
-      const baseName = safeName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+      // Extract text from resume (simplified - in production, use a proper PDF parser)
+      let resumeText = '';
+      if (file.mimetype === 'text/plain') {
+        resumeText = file.buffer.toString('utf-8');
+      } else {
+        // For PDFs and other formats, we'll use a placeholder
+        resumeText = `Resume: ${file.originalname}\n\nThis is a placeholder for resume content. In a production environment, you would use a proper PDF parser to extract text from the uploaded file.`;
+      }
 
-      const uniqueEmail = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}@placeholder.local`;
+      // Use AI to analyze the resume
+      let analysis;
+      try {
+        analysis = await geminiService.analyzeResume(resumeText);
+      } catch (aiError) {
+        console.warn('AI analysis failed, using fallback:', aiError);
+        // Fallback to basic parsing
+        const baseName = safeName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+        analysis = {
+          name: baseName || 'Unnamed Candidate',
+          email: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}@placeholder.local`,
+          phone: '',
+          skills: [],
+          experience_years: 0,
+          education: [],
+          summary: '',
+          achievements: [],
+          parsed_text: resumeText
+        };
+      }
 
       const { data, error } = await supabase
         .from('candidates')
         .insert([
           {
-            name: baseName || 'Unnamed Candidate',
-            email: uniqueEmail,
-            phone: '',
-            skills: [],
-            experience_years: 0,
+            name: analysis.name,
+            email: analysis.email,
+            phone: analysis.phone,
+            skills: analysis.skills,
+            experience_years: analysis.experience_years,
             status: 'new',
             resumes: [publicUrl],
-            parsed_text: ''
+            parsed_text: analysis.parsed_text
           }
         ])
         .select()
@@ -279,11 +306,12 @@ app.post('/api/users/:id/role', async (req: Request, res: Response) => {
   }
 });
 
-// Matches with Supabase
+// AI-Powered Smart Matching
 app.get('/api/jobs/:id/matches', async (req: Request, res: Response) => {
   try {
     const jobId = req.params.id;
     const threshold = Number(req.query.threshold ?? 70);
+    const useAI = req.query.ai === 'true';
 
     // Get job details
     const { data: job, error: jobError } = await supabase
@@ -303,68 +331,161 @@ app.get('/api/jobs/:id/matches', async (req: Request, res: Response) => {
 
     if (candidatesError) throw candidatesError;
 
-    // Calculate matches
-    const result = (candidates || []).map(candidate => {
-      // Calculate skill match
-      const jobSkills = job.skills || [];
-      const candidateSkills = candidate.skills || [];
-      const matchingSkills = jobSkills.filter(skill => 
-        candidateSkills.some(cs => cs.toLowerCase().includes(skill.toLowerCase()) || skill.toLowerCase().includes(cs.toLowerCase()))
-      );
-      const skillScore = jobSkills.length > 0 ? (matchingSkills.length / jobSkills.length) * 100 : 0;
-
-      // Calculate experience match
-      const candidateExp = candidate.experience_years || 0;
-      const minExp = job.experience_min || 0;
-      const maxExp = job.experience_max || 10;
-      let expScore = 0;
-      if (candidateExp >= minExp && candidateExp <= maxExp) {
-        expScore = 100;
-      } else if (candidateExp < minExp) {
-        expScore = Math.max(0, (candidateExp / minExp) * 80);
-      } else {
-        expScore = Math.max(0, 100 - ((candidateExp - maxExp) / maxExp) * 50);
-      }
-
-      // Calculate location match (simplified)
-      const locationScore = job.location === 'Remote' ? 100 : 80;
-
-      // Calculate role fit (based on job title keywords)
-      const jobTitle = job.title.toLowerCase();
-      const candidateSkillsLower = candidateSkills.map(s => s.toLowerCase());
-      let roleFitScore = 50; // Base score
-      if (jobTitle.includes('react') && candidateSkillsLower.some(s => s.includes('react'))) roleFitScore += 30;
-      if (jobTitle.includes('full stack') && candidateSkillsLower.length >= 4) roleFitScore += 20;
-      if (jobTitle.includes('frontend') && candidateSkillsLower.some(s => ['css', 'html', 'javascript', 'vue', 'angular'].includes(s))) roleFitScore += 20;
-      if (jobTitle.includes('backend') && candidateSkillsLower.some(s => ['python', 'java', 'node', 'django', 'spring'].includes(s))) roleFitScore += 20;
-      roleFitScore = Math.min(100, roleFitScore);
-
-      // Calculate overall score
-      const overallScore = Math.round(
-        (skillScore * 0.4) + 
-        (expScore * 0.3) + 
-        (locationScore * 0.1) + 
-        (roleFitScore * 0.2)
-      );
-
-      return {
-        candidate,
-        match_score: Math.max(0, Math.min(100, overallScore)),
-        breakdown: {
-          skills: Math.round(skillScore),
-          experience: Math.round(expScore),
-          location: Math.round(locationScore),
-          role_fit: Math.round(roleFitScore)
+    let result;
+    
+    if (useAI) {
+      // Use AI-powered matching
+      const aiMatches = [];
+      for (const candidate of candidates || []) {
+        try {
+          const candidateText = candidate.parsed_text || '';
+          const jobDescription = job.description || '';
+          const jobSkills = job.skills || [];
+          
+          const match = await geminiService.matchCandidateToJob(candidateText, jobDescription, jobSkills);
+          match.candidate_id = candidate.id;
+          match.candidate_name = candidate.name;
+          
+          if (match.match_score >= threshold) {
+            aiMatches.push({
+              candidate,
+              match_score: match.match_score,
+              ai_analysis: {
+                matching_skills: match.matching_skills,
+                missing_skills: match.missing_skills,
+                reasons: match.reasons
+              }
+            });
+          }
+        } catch (aiError) {
+          console.warn('AI matching failed for candidate:', candidate.id, aiError);
+          // Fallback to basic matching
         }
-      };
-    })
-    .filter(m => m.match_score >= threshold)
-    .sort((a, b) => b.match_score - a.match_score);
+      }
+      
+      result = aiMatches.sort((a, b) => b.match_score - a.match_score);
+    } else {
+      // Use traditional matching algorithm
+      result = (candidates || []).map(candidate => {
+        // Calculate skill match
+        const jobSkills = job.skills || [];
+        const candidateSkills = candidate.skills || [];
+        const matchingSkills = jobSkills.filter((skill: string) => 
+          candidateSkills.some((cs: string) => cs.toLowerCase().includes(skill.toLowerCase()) || skill.toLowerCase().includes(cs.toLowerCase()))
+        );
+        const skillScore = jobSkills.length > 0 ? (matchingSkills.length / jobSkills.length) * 100 : 0;
+
+        // Calculate experience match
+        const candidateExp = candidate.experience_years || 0;
+        const minExp = job.experience_min || 0;
+        const maxExp = job.experience_max || 10;
+        let expScore = 0;
+        if (candidateExp >= minExp && candidateExp <= maxExp) {
+          expScore = 100;
+        } else if (candidateExp < minExp) {
+          expScore = Math.max(0, (candidateExp / minExp) * 80);
+        } else {
+          expScore = Math.max(0, 100 - ((candidateExp - maxExp) / maxExp) * 50);
+        }
+
+        // Calculate location match (simplified)
+        const locationScore = job.location === 'Remote' ? 100 : 80;
+
+        // Calculate role fit (based on job title keywords)
+        const jobTitle = job.title.toLowerCase();
+        const candidateSkillsLower = candidateSkills.map((s: string) => s.toLowerCase());
+        let roleFitScore = 50; // Base score
+        if (jobTitle.includes('react') && candidateSkillsLower.some((s: string) => s.includes('react'))) roleFitScore += 30;
+        if (jobTitle.includes('full stack') && candidateSkillsLower.length >= 4) roleFitScore += 20;
+        if (jobTitle.includes('frontend') && candidateSkillsLower.some((s: string) => ['css', 'html', 'javascript', 'vue', 'angular'].includes(s))) roleFitScore += 20;
+        if (jobTitle.includes('backend') && candidateSkillsLower.some((s: string) => ['python', 'java', 'node', 'django', 'spring'].includes(s))) roleFitScore += 20;
+        roleFitScore = Math.min(100, roleFitScore);
+
+        // Calculate overall score
+        const overallScore = Math.round(
+          (skillScore * 0.4) + 
+          (expScore * 0.3) + 
+          (locationScore * 0.1) + 
+          (roleFitScore * 0.2)
+        );
+
+        return {
+          candidate,
+          match_score: Math.max(0, Math.min(100, overallScore)),
+          breakdown: {
+            skills: Math.round(skillScore),
+            experience: Math.round(expScore),
+            location: Math.round(locationScore),
+            role_fit: Math.round(roleFitScore)
+          }
+        };
+      })
+      .filter(m => m.match_score >= threshold)
+      .sort((a, b) => b.match_score - a.match_score);
+    }
 
     res.json({ status: 'ok', data: result, errors: [] });
   } catch (error) {
     console.error('Error calculating matches:', error);
     res.status(500).json({ status: 'error', data: null, errors: [{ code: 'CALCULATE_MATCHES_ERROR' }] });
+  }
+});
+
+// AI-Powered Job Description Generation
+app.post('/api/ai/generate-job-description', async (req: Request, res: Response) => {
+  try {
+    const { title, requirements } = req.body;
+    
+    if (!title || !requirements) {
+      return res.status(400).json({ status: 'error', data: null, errors: [{ code: 'MISSING_PARAMETERS' }] });
+    }
+
+    const description = await geminiService.generateJobDescription(title, requirements);
+    res.json({ status: 'ok', data: { description }, errors: [] });
+  } catch (error) {
+    console.error('Error generating job description:', error);
+    res.status(500).json({ status: 'error', data: null, errors: [{ code: 'GENERATE_JOB_DESCRIPTION_ERROR' }] });
+  }
+});
+
+// AI-Powered Interview Questions Generation
+app.post('/api/ai/generate-interview-questions', async (req: Request, res: Response) => {
+  try {
+    const { jobTitle, skills } = req.body;
+    
+    if (!jobTitle || !skills) {
+      return res.status(400).json({ status: 'error', data: null, errors: [{ code: 'MISSING_PARAMETERS' }] });
+    }
+
+    const questions = await geminiService.generateInterviewQuestions(jobTitle, skills);
+    res.json({ status: 'ok', data: { questions }, errors: [] });
+  } catch (error) {
+    console.error('Error generating interview questions:', error);
+    res.status(500).json({ status: 'error', data: null, errors: [{ code: 'GENERATE_INTERVIEW_QUESTIONS_ERROR' }] });
+  }
+});
+
+// AI-Powered Hiring Insights
+app.get('/api/ai/insights', async (_req: Request, res: Response) => {
+  try {
+    // Get all candidates and jobs
+    const { data: candidates, error: candidatesError } = await supabase
+      .from('candidates')
+      .select('*');
+
+    const { data: jobs, error: jobsError } = await supabase
+      .from('jobs')
+      .select('*');
+
+    if (candidatesError || jobsError) {
+      throw candidatesError || jobsError;
+    }
+
+    const insights = await geminiService.analyzeHiringTrends(candidates || [], jobs || []);
+    res.json({ status: 'ok', data: { insights }, errors: [] });
+  } catch (error) {
+    console.error('Error generating insights:', error);
+    res.status(500).json({ status: 'error', data: null, errors: [{ code: 'GENERATE_INSIGHTS_ERROR' }] });
   }
 });
 
