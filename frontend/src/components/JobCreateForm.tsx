@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { JobCreateRequest, Job } from '../types';
+import { useGenerateJobDescription } from '../hooks/useAI';
 
 interface JobCreateFormProps {
   onSubmit: (job: JobCreateRequest) => void;
@@ -19,6 +20,8 @@ export default function JobCreateForm({ onSubmit, onCancel, isLoading, initialDa
     experience_max: 10,
     auto_match: false,
   });
+
+  const generateJobDescriptionMutation = useGenerateJobDescription();
 
   // Populate form when editing
   useEffect(() => {
@@ -53,6 +56,28 @@ export default function JobCreateForm({ onSubmit, onCancel, isLoading, initialDa
       ...prev,
       skills: prev.skills.filter(s => s !== skill)
     }));
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!formData.title || formData.skills.length === 0) {
+      alert('Please enter a job title and at least one skill before generating description');
+      return;
+    }
+
+    try {
+      const result = await generateJobDescriptionMutation.mutateAsync({
+        title: formData.title,
+        requirements: formData.skills
+      });
+      
+      setFormData(prev => ({
+        ...prev,
+        description: result.description
+      }));
+    } catch (error) {
+      console.error('Failed to generate job description:', error);
+      alert('Failed to generate job description. Please try again.');
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -95,13 +120,33 @@ export default function JobCreateForm({ onSubmit, onCancel, isLoading, initialDa
               <label className="label">
                 Job Description
               </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="input resize-none"
-                rows={4}
-                placeholder="Describe the role, responsibilities, and requirements..."
-              />
+              <div className="flex gap-2">
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="input resize-none flex-1"
+                  rows={4}
+                  placeholder="Describe the role, responsibilities, and requirements..."
+                />
+                <button
+                  type="button"
+                  onClick={handleGenerateDescription}
+                  disabled={generateJobDescriptionMutation.isPending || !formData.title || formData.skills.length === 0}
+                  className="btn btn-secondary self-start"
+                  title="Generate AI-powered job description"
+                >
+                  {generateJobDescriptionMutation.isPending ? (
+                    <div className="loading-spinner w-4 h-4"></div>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      AI
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>

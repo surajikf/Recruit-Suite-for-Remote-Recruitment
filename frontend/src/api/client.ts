@@ -24,8 +24,8 @@ export const jobsApi = {
     return response.data;
   },
 
-  getMatches: async (jobId: string, threshold: number = 70): Promise<ApiResponse<MatchScore[]>> => {
-    const response = await api.get(`/jobs/${jobId}/matches?threshold=${threshold}`);
+  getMatches: async (jobId: string, threshold: number = 70, useAI: boolean = false): Promise<ApiResponse<MatchScore[]>> => {
+    const response = await api.get(`/jobs/${jobId}/matches?threshold=${threshold}&ai=${useAI}`);
     return response.data;
   },
 };
@@ -55,6 +55,24 @@ export const usersApi = {
   },
   updateRole: async (id: string, role: 'user' | 'admin'): Promise<ApiResponse<AppUser>> => {
     const response = await api.post(`/users/${id}/role`, { role });
+    return response.data;
+  },
+};
+
+// AI-powered API endpoints
+export const aiApi = {
+  generateJobDescription: async (title: string, requirements: string[]): Promise<ApiResponse<{ description: string }>> => {
+    const response = await api.post('/ai/generate-job-description', { title, requirements });
+    return response.data;
+  },
+
+  generateInterviewQuestions: async (jobTitle: string, skills: string[]): Promise<ApiResponse<{ questions: string[] }>> => {
+    const response = await api.post('/ai/generate-interview-questions', { jobTitle, skills });
+    return response.data;
+  },
+
+  getInsights: async (): Promise<ApiResponse<{ insights: string }>> => {
+    const response = await api.get('/ai/insights');
     return response.data;
   },
 };

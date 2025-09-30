@@ -33,6 +33,11 @@ export interface MatchScore {
     location: number;
     role_fit: number;
   };
+  ai_analysis?: {
+    matching_skills: string[];
+    missing_skills: string[];
+    reasons: string[];
+  };
 }
 
 export interface ApiResponse<T> {

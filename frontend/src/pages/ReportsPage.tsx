@@ -1,13 +1,15 @@
 import { useCandidates } from '../hooks/useCandidates';
 import { useJobs } from '../hooks/useJobs';
+import { useAIInsights } from '../hooks/useAI';
 import { useEffect, useMemo, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 
 export default function ReportsPage() {
   const { data: candidates = [] } = useCandidates();
   const { data: jobs = [] } = useJobs();
+  const { data: aiInsights, isLoading: aiLoading } = useAIInsights();
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
-  const [selectedReport, setSelectedReport] = useState<'overview' | 'pipeline' | 'hiring' | 'skills'>('overview');
+  const [selectedReport, setSelectedReport] = useState<'overview' | 'pipeline' | 'hiring' | 'skills' | 'ai'>('overview');
 
   // Filter by date range
   const filteredData = useMemo(() => {
@@ -138,7 +140,7 @@ export default function ReportsPage() {
                   {range === 'all' ? 'All Time' : range === '7d' ? 'Last 7 Days' : range === '30d' ? 'Last 30 Days' : 'Last 90 Days'}
                 </button>
               ))}
-            </div>
+      </div>
 
             {/* Export Button */}
             <button
@@ -151,7 +153,7 @@ export default function ReportsPage() {
               Export CSV
             </button>
           </div>
-        </div>
+      </div>
 
         {/* Report Tabs */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2 mb-6">
@@ -161,6 +163,7 @@ export default function ReportsPage() {
               { id: 'pipeline', label: 'Pipeline', icon: '🔄' },
               { id: 'hiring', label: 'Hiring Metrics', icon: '🎯' },
               { id: 'skills', label: 'Skills Analysis', icon: '💡' },
+              { id: 'ai', label: 'AI Insights', icon: '🤖' },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -176,7 +179,7 @@ export default function ReportsPage() {
               </button>
             ))}
           </div>
-        </div>
+          </div>
 
         {/* Overview Report */}
         {selectedReport === 'overview' && (
@@ -265,7 +268,7 @@ export default function ReportsPage() {
                   {Math.round(metrics.totalCandidates / Math.max(1, metrics.totalJobs))}
                 </p>
                 <p className="text-sm text-slate-500">candidates per job</p>
-              </div>
+          </div>
 
               <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-700 mb-3">✅ Interview Success Rate</h3>
@@ -275,8 +278,8 @@ export default function ReportsPage() {
                     : 0}%
                 </p>
                 <p className="text-sm text-slate-500">hired after interview</p>
-              </div>
-            </div>
+          </div>
+        </div>
 
             {/* Pipeline Health */}
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
@@ -330,9 +333,9 @@ export default function ReportsPage() {
                   </div>
                 ))}
               </div>
-            </div>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Hiring Metrics */}
         {selectedReport === 'hiring' && (
@@ -377,15 +380,15 @@ export default function ReportsPage() {
                     </span>
                   </div>
                 </div>
-              </div>
             </div>
+          </div>
 
             {/* Jobs Performance */}
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900 mb-4">💼 Job Performance</h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
+            <table className="w-full text-sm">
+              <thead>
                     <tr className="text-left border-b-2 border-slate-200">
                       <th className="pb-3 font-semibold text-slate-700">Job Title</th>
                       <th className="pb-3 font-semibold text-slate-700">Status</th>
@@ -393,9 +396,9 @@ export default function ReportsPage() {
                       <th className="pb-3 font-semibold text-slate-700">Interviewed</th>
                       <th className="pb-3 font-semibold text-slate-700">Hired</th>
                       <th className="pb-3 font-semibold text-slate-700">Fill Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                </tr>
+              </thead>
+              <tbody>
                     {filteredData.jobs.slice(0, 10).map(job => {
                       // Mock data - in real app would track per-job candidates
                       const applicants = Math.floor(Math.random() * 20);
@@ -423,13 +426,13 @@ export default function ReportsPage() {
                               {fillRate}%
                             </span>
                           </td>
-                        </tr>
+                  </tr>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+              </tbody>
+            </table>
+          </div>
+        </div>
           </div>
         )}
 
@@ -488,8 +491,8 @@ export default function ReportsPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-green-700 bg-green-50 p-4 rounded-lg font-medium">✅ All job requirements covered!</p>
-                )}
-              </div>
+      )}
+    </div>
 
               <div className="bg-white rounded-xl p-6 border border-blue-200 shadow-sm">
                 <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -513,6 +516,91 @@ export default function ReportsPage() {
                 ) : (
                   <p className="text-sm text-slate-600 bg-slate-50 p-4 rounded-lg italic">All skills match current jobs</p>
                 )}
+              </div>
+            </div>
+    </div>
+        )}
+
+        {/* AI Insights */}
+        {selectedReport === 'ai' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+        <div>
+                  <h3 className="text-xl font-bold text-slate-900">AI-Powered Hiring Insights</h3>
+                  <p className="text-slate-600">Intelligent analysis of your recruitment data and trends</p>
+                </div>
+              </div>
+
+              {aiLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex items-center gap-3">
+                    <div className="loading-spinner w-6 h-6"></div>
+                    <span className="text-slate-600">Generating AI insights...</span>
+                  </div>
+        </div>
+              ) : aiInsights ? (
+                <div className="prose prose-slate max-w-none">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+                    <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
+                      {aiInsights.insights}
+        </div>
+      </div>
+    </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-slate-400 mb-4">
+                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">No AI insights available</h3>
+                  <p className="text-slate-600">AI insights will be generated based on your recruitment data</p>
+                </div>
+              )}
+            </div>
+
+            {/* AI Features Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h4 className="font-semibold text-slate-900">Resume Parsing</h4>
+                </div>
+                <p className="text-sm text-slate-600">Automatically extract skills, experience, and qualifications from uploaded resumes</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h4 className="font-semibold text-slate-900">Smart Matching</h4>
+                </div>
+                <p className="text-sm text-slate-600">AI-powered candidate-job matching with detailed analysis and reasoning</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <h4 className="font-semibold text-slate-900">Content Generation</h4>
+                </div>
+                <p className="text-sm text-slate-600">Generate job descriptions and interview questions tailored to your requirements</p>
               </div>
             </div>
           </div>
@@ -544,7 +632,7 @@ function MetricCard({ title, value, icon, color, subtitle }: {
         <p className="text-sm font-semibold text-slate-700">{title}</p>
         <div className={`w-10 h-10 bg-gradient-to-br ${colors[color]} rounded-lg flex items-center justify-center text-xl`}>
           {icon}
-        </div>
+          </div>
       </div>
       <p className="text-3xl font-bold text-slate-900">{value}</p>
       {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
@@ -570,10 +658,10 @@ function ConversionBar({ label, percentage, color }: {
       <div className="flex items-center justify-between text-sm mb-1">
         <span className="font-medium text-slate-700">{label}</span>
         <span className="font-bold text-slate-900">{percentage}%</span>
-      </div>
+          </div>
       <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
         <div className={`h-full ${colors[color]} rounded-full transition-all duration-500`} style={{ width: `${percentage}%` }} />
-      </div>
+        </div>
     </div>
   );
 }

@@ -35,12 +35,12 @@ export function useJob(id: string) {
   });
 }
 
-export function useJobMatches(id: string, threshold: number = 70) {
+export function useJobMatches(id: string, threshold: number = 70, useAI: boolean = false) {
   return useQuery({
-    queryKey: ['job-matches', id, threshold],
+    queryKey: ['job-matches', id, threshold, useAI],
     enabled: !!id,
     queryFn: async () => {
-      const response = await supabaseApi.jobs.getMatches(id, threshold);
+      const response = await supabaseApi.jobs.getMatches(id, threshold, useAI);
       return response.data || [];
     },
   });

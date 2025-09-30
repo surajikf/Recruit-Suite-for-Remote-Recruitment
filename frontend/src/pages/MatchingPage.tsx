@@ -9,10 +9,11 @@ import CandidatePreview from '../components/CandidatePreview';
 export default function MatchingPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const [threshold, setThreshold] = useState(70);
+  const [useAI, setUseAI] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
 
   const { data: job, isLoading: jobLoading } = useJob(jobId || '');
-  const { data: matches = [], isLoading: matchesLoading } = useJobMatches(jobId || '', threshold);
+  const { data: matches = [], isLoading: matchesLoading } = useJobMatches(jobId || '', threshold, useAI);
   const { data: candidates = [] } = useCandidates();
 
   const handleThresholdChange = (newThreshold: number) => {
@@ -68,6 +69,25 @@ export default function MatchingPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Job Matching</h1>
         <p className="text-slate-600">Find the best candidates for your job posting</p>
+        
+        {/* AI Toggle */}
+        <div className="mt-4 flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="useAI"
+              checked={useAI}
+              onChange={(e) => setUseAI(e.target.checked)}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+            />
+            <label htmlFor="useAI" className="text-sm font-medium text-gray-700">
+              🤖 Use AI-Powered Matching
+            </label>
+          </div>
+          <div className="text-xs text-gray-500">
+            {useAI ? 'AI will analyze resume content and job requirements for smarter matching' : 'Traditional keyword-based matching'}
+          </div>
+        </div>
       </div>
 
       <MatchingEngine
@@ -75,6 +95,7 @@ export default function MatchingPage() {
         matches={matches}
         onThresholdChange={handleThresholdChange}
         onViewCandidate={handleViewCandidate}
+        useAI={useAI}
       />
 
       {selectedCandidate && (
