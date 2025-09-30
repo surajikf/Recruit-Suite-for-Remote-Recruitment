@@ -439,19 +439,26 @@ export default function ReportsPage() {
             {/* Top Skills in Demand */}
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900 mb-4">🔥 Most In-Demand Skills</h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {metrics.topSkills.map(([skill, count]) => {
                   const maxCount = metrics.topSkills[0]?.[1] || 1;
                   const width = (count / maxCount) * 100;
                   return (
-                    <div key={skill} className="flex items-center gap-3">
-                      <div className="w-32 text-sm font-medium text-slate-900 truncate">{skill}</div>
-                      <div className="flex-1 h-6 bg-slate-100 rounded-lg overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-[#0B79D0] to-[#0a6cb9] flex items-center px-2" style={{ width: `${width}%` }}>
-                          <span className="text-white text-xs font-bold">{count}</span>
+                    <div key={skill} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-slate-900">{skill}</span>
+                        <span className="text-sm text-slate-600 font-medium">{count} candidates</span>
+                      </div>
+                      <div className="h-6 bg-slate-100 rounded-lg overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-[#0B79D0] to-[#0a6cb9] flex items-center px-3 transition-all duration-500" 
+                          style={{ width: `${width}%` }}
+                        >
+                          {width > 15 && (
+                            <span className="text-white text-xs font-bold">{count}</span>
+                          )}
                         </div>
                       </div>
-                      <div className="w-16 text-right text-sm text-slate-600">{count} candidates</div>
                     </div>
                   );
                 })}
@@ -461,40 +468,50 @@ export default function ReportsPage() {
             {/* Skills Gap Analysis */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white rounded-xl p-6 border border-red-200 shadow-sm">
-                <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <span>🚨</span> Skills Gap (Job Requirements Not Met)
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <span>🚨</span> Skills Gap
                 </h3>
+                <p className="text-sm text-slate-600 mb-4">Skills required in jobs but missing in candidates</p>
                 {metrics.skillsGap.length > 0 ? (
                   <div className="space-y-2">
                     {metrics.skillsGap.slice(0, 8).map(skill => (
-                      <div key={skill} className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
-                        <span className="text-red-600 text-xs">⚠️</span>
-                        <span className="text-sm text-slate-700 font-medium">{skill}</span>
-                        <span className="ml-auto text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">Need candidates</span>
+                      <div key={skill} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-600 text-sm">⚠️</span>
+                          <span className="text-sm text-slate-900 font-medium">{skill}</span>
+                        </div>
+                        <span className="text-xs text-red-700 bg-red-200 px-3 py-1 rounded-full font-semibold whitespace-nowrap">
+                          Need candidates
+                        </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-green-600 bg-green-50 p-4 rounded-lg">✅ All job requirements covered by candidate pool!</p>
+                  <p className="text-sm text-green-700 bg-green-50 p-4 rounded-lg font-medium">✅ All job requirements covered!</p>
                 )}
               </div>
 
               <div className="bg-white rounded-xl p-6 border border-blue-200 shadow-sm">
-                <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                   <span>💎</span> Untapped Talent Pool
                 </h3>
+                <p className="text-sm text-slate-600 mb-4">Skills candidates have but no jobs require</p>
                 {metrics.skillsOverflow.length > 0 ? (
                   <div className="space-y-2">
                     {metrics.skillsOverflow.slice(0, 8).map(skill => (
-                      <div key={skill} className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
-                        <span className="text-blue-600 text-xs">💡</span>
-                        <span className="text-sm text-slate-700 font-medium">{skill}</span>
-                        <span className="ml-auto text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">Create job?</span>
+                      <div key={skill} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-blue-600 text-sm">💡</span>
+                          <span className="text-sm text-slate-900 font-medium">{skill}</span>
+                        </div>
+                        <span className="text-xs text-blue-700 bg-blue-200 px-3 py-1 rounded-full font-semibold whitespace-nowrap">
+                          Create job?
+                        </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-600 italic">All candidate skills match current job requirements</p>
+                  <p className="text-sm text-slate-600 bg-slate-50 p-4 rounded-lg italic">All skills match current jobs</p>
                 )}
               </div>
             </div>
