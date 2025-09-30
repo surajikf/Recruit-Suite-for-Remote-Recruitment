@@ -502,7 +502,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <UIProvider>
-      <Router>
+      <Router basename="/Recruit-Suite-for-Remote-Recruitment">
         <ProgressProvider>
         <div className="min-h-screen bg-gray-50 text-gray-900">
           <TopNav />
