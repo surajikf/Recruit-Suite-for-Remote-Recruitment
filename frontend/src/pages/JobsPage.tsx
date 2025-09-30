@@ -1,15 +1,72 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useJobs, useCreateJob } from '../hooks/useJobs';
 import type { JobCreateRequest, Job } from '../types';
 import JobList from '../components/JobList';
 import JobCreateForm from '../components/JobCreateForm';
+import PageHeader from '../components/PageHeader';
 
 export default function JobsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   
   const { data: jobs = [], isLoading } = useJobs();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [status, setStatus] = useState<'all' | 'draft' | 'published' | 'closed'>('all');
+  const [view, setView] = useState<'auto' | 'table' | 'cards'>('auto');
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('jobs_view_mode');
+      if (saved === 'auto' || saved === 'table' || saved === 'cards') setView(saved);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem('jobs_view_mode', view); } catch {}
+  }, [view]);
+
+  // Load saved search/status (prefer URL param if present)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('jobs_filters');
+      if (raw) {
+        const f = JSON.parse(raw);
+        if (!searchParams.get('q') && typeof f.search === 'string') setSearch(f.search);
+        if (['all','draft','published','closed'].includes(f.status)) setStatus(f.status);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save search/status
+  useEffect(() => {
+    try { localStorage.setItem('jobs_filters', JSON.stringify({ search, status })); } catch {}
+  }, [search, status]);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().includes('MAC');
+      const ctrl = isMac ? e.metaKey : e.ctrlKey;
+      if (ctrl && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        setShowCreateForm(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Reflect search to URL
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (search) next.set('q', search); else next.delete('q');
+    setSearchParams(next, { replace: true });
+  }, [search]);
+
+  // Open modal via URL ?new=job
+  useEffect(() => {
+    if (searchParams.get('new') === 'job') setShowCreateForm(true);
+  }, [searchParams]);
   const createJobMutation = useCreateJob();
 
   const handleCreateJob = async (jobData: JobCreateRequest) => {
@@ -25,26 +82,59 @@ export default function JobsPage() {
     setSelectedJob(job);
   };
 
+  const filtered = useMemo(() => {
+    return jobs.filter(j => {
+      const s = search.trim().toLowerCase();
+      const matchText = !s || j.title.toLowerCase().includes(s) || (j.description || '').toLowerCase().includes(s) || (j.skills || []).some(sk => sk.toLowerCase().includes(s));
+      const matchStatus = status === 'all' || j.status === status;
+      return matchText && matchStatus;
+    });
+  }, [jobs, search, status]);
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B79D0]"></div>
+      <div className="container py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({length:6}).map((_,i)=>(<div key={i} className="card skeleton h-28" />))}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text mb-2">Job Management</h1>
-          <p className="text-muted text-lg">Create, manage, and track your job postings</p>
-        </div>
+      <div className="container py-8">
+        <PageHeader title="Job Management" subtitle="Create, manage, and track your job postings" />
+
+      <div className="mb-6 flex flex-col md:flex-row md:items-center gap-3">
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search title, description, or skills…"
+          className="input max-w-xl"
+        />
+        <select
+          value={status}
+          onChange={e => setStatus(e.target.value as any)}
+          className="input md:w-48"
+        >
+          <option value="all">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="closed">Closed</option>
+        </select>
+        <select value={view} onChange={e=>setView(e.target.value as any)} className="input md:w-40">
+          <option value="auto">Auto view</option>
+          <option value="table">Table view</option>
+          <option value="cards">Card view</option>
+        </select>
+      </div>
 
       <JobList
-        jobs={jobs}
+        jobs={filtered}
         onJobClick={handleJobClick}
         onCreateJob={() => setShowCreateForm(true)}
+        view={view}
       />
 
       {showCreateForm && (

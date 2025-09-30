@@ -50,3 +50,14 @@ export interface JobCreateRequest {
   experience_max: number;
   auto_match?: boolean;
 }
+
+export interface AppUser {
+  id: string;
+  email: string;
+  name: string | null;
+  signup_method: 'email' | 'google';
+  role: 'user' | 'admin' | 'hr';
+  is_approved: boolean;
+  created_at?: string;
+  updated_at?: string;
+}

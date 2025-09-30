@@ -60,3 +60,21 @@ CREATE INDEX idx_candidates_created_at ON candidates(created_at);
 CREATE INDEX idx_job_matches_job_id ON job_matches(job_id);
 CREATE INDEX idx_job_matches_candidate_id ON job_matches(candidate_id);
 CREATE INDEX idx_job_matches_score ON job_matches(match_score);
+
+-- Users table for auth and roles
+CREATE TABLE IF NOT EXISTS app_users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY, -- matches auth.users.id when available
+  email TEXT UNIQUE NOT NULL,
+  name TEXT,
+  signup_method TEXT NOT NULL DEFAULT 'email' CHECK (signup_method IN ('email', 'google')),
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  is_approved BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE app_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations on app_users" ON app_users FOR ALL USING (true);
+
+CREATE INDEX IF NOT EXISTS idx_app_users_role ON app_users(role);
+CREATE INDEX IF NOT EXISTS idx_app_users_is_approved ON app_users(is_approved);

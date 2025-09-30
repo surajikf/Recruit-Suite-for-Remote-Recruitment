@@ -1,15 +1,84 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 import { supabase } from './lib/supabase';
+import type { User } from '@supabase/supabase-js';
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
+const upload = multer({ storage: multer.memoryStorage() });
+
+const publicBaseUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:4000';
+const uploadsRoot = path.resolve('uploads');
+const resumesDir = path.join(uploadsRoot, 'resumes');
+try {
+  fs.mkdirSync(resumesDir, { recursive: true });
+} catch {}
+app.use('/uploads', express.static(uploadsRoot));
+
+// Serve frontend static build
+const frontendDist = path.resolve('../frontend/dist');
+try {
+  app.use(express.static(frontendDist));
+} catch {}
+
+// Ensure default admin exists in Supabase Auth and app_users
+async function ensureDefaultAdmin() {
+  const adminEmail = 'admin@admin.com';
+  const adminPassword = '12345';
+  try {
+    // Try to create user; if exists, this will error with duplicate
+    // We ignore duplicate errors by checking error.message
+    const createRes = await (supabase as any).auth.admin.createUser({
+      email: adminEmail,
+      password: adminPassword,
+      email_confirm: true,
+      user_metadata: { role: 'admin' }
+    });
+
+    if (createRes.error && !String(createRes.error.message || '').toLowerCase().includes('already registered')) {
+      console.warn('Admin createUser error (ignored if already exists):', createRes.error.message);
+    }
+
+    // Fetch the auth user by listing and filtering by email (no direct getByEmail in v2)
+    let authUser: User | null = null;
+    const { data: listData, error: listError } = await (supabase as any).auth.admin.listUsers({ perPage: 1000, page: 1 });
+    if (listError) {
+      console.warn('listUsers error:', listError.message);
+    } else {
+      authUser = (listData?.users || []).find((u: User) => u.email?.toLowerCase() === adminEmail) || null;
+    }
+
+    // Upsert into app_users with approved admin role
+    const { error: upsertError } = await supabase
+      .from('app_users')
+      .upsert({
+        id: authUser?.id,
+        email: adminEmail,
+        name: 'Administrator',
+        signup_method: 'email',
+        role: 'admin',
+        is_approved: true
+      }, { onConflict: 'email' });
+    if (upsertError) {
+      console.error('Error upserting admin into app_users:', upsertError);
+    } else {
+      console.log('Default admin is ensured.');
+    }
+  } catch (err: any) {
+    console.error('ensureDefaultAdmin failed:', err.message || err);
+  }
+}
 
 // Healthcheck
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', data: { service: 'ikf-recruit-backend' }, errors: [] });
 });
+
+// Skip cloud Storage ensure in dev; we write locally under /uploads
 
 // Jobs endpoints with Supabase
 app.get('/api/jobs', async (_req: Request, res: Response) => {
@@ -113,6 +182,103 @@ app.post('/api/candidates', async (req: Request, res: Response) => {
   }
 });
 
+// Upload resumes and create candidates
+app.post('/api/upload/resumes', upload.array('files'), async (req: Request, res: Response) => {
+  try {
+    const files = (req.files as Express.Multer.File[]) || [];
+    if (files.length === 0) return res.json({ status: 'ok', data: [], errors: [] });
+
+    const created: any[] = [];
+    for (const file of files) {
+      const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const objectPath = `${Date.now()}-${safeName}`;
+
+      // Always save locally for reliability
+      const localPath = path.join(resumesDir, objectPath);
+      fs.writeFileSync(localPath, file.buffer);
+      const publicUrl = `${publicBaseUrl}/uploads/resumes/${objectPath}`;
+
+      const baseName = safeName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+
+      const uniqueEmail = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}@placeholder.local`;
+
+      const { data, error } = await supabase
+        .from('candidates')
+        .insert([
+          {
+            name: baseName || 'Unnamed Candidate',
+            email: uniqueEmail,
+            phone: '',
+            skills: [],
+            experience_years: 0,
+            status: 'new',
+            resumes: [publicUrl],
+            parsed_text: ''
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      created.push(data);
+    }
+
+    res.status(201).json({ status: 'ok', data: created, errors: [] });
+  } catch (error: any) {
+    console.error('Error uploading resumes:', error);
+    res.status(500).json({ status: 'error', data: null, errors: [{ code: 'UPLOAD_RESUMES_ERROR', message: error.message }] });
+  }
+});
+
+// Users management endpoints (Admin UI)
+app.get('/api/users', async (_req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('app_users')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json({ status: 'ok', data: data || [], errors: [] });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ status: 'error', data: null, errors: [{ code: 'FETCH_USERS_ERROR' }] });
+  }
+});
+
+app.post('/api/users/:id/approve', async (req: Request, res: Response) => {
+  try {
+    const { approved } = req.body as { approved: boolean };
+    const { data, error } = await supabase
+      .from('app_users')
+      .update({ is_approved: !!approved })
+      .eq('id', req.params.id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    res.json({ status: 'ok', data, errors: [] });
+  } catch (error) {
+    console.error('Error approving user:', error);
+    res.status(500).json({ status: 'error', data: null, errors: [{ code: 'APPROVE_USER_ERROR' }] });
+  }
+});
+
+app.post('/api/users/:id/role', async (req: Request, res: Response) => {
+  try {
+    const { role } = req.body as { role: 'user' | 'admin' };
+    const { data, error } = await supabase
+      .from('app_users')
+      .update({ role })
+      .eq('id', req.params.id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    res.json({ status: 'ok', data, errors: [] });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({ status: 'error', data: null, errors: [{ code: 'UPDATE_USER_ROLE_ERROR' }] });
+  }
+});
+
 // Matches with Supabase
 app.get('/api/jobs/:id/matches', async (req: Request, res: Response) => {
   try {
@@ -202,6 +368,16 @@ app.get('/api/jobs/:id/matches', async (req: Request, res: Response) => {
   }
 });
 
+// Serve SPA index.html for non-API routes
+app.get(/^(?!\/api).*/, (_req: Request, res: Response) => {
+  try {
+    const indexPath = path.join(frontendDist, 'index.html');
+    res.sendFile(indexPath);
+  } catch {
+    res.status(404).send('Not Found');
+  }
+});
+
 // Error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
@@ -211,4 +387,10 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
 app.listen(port, () => {
   console.log(`Backend listening on http://localhost:${port}`);
+  const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY.startsWith('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
+  if (hasServiceKey) {
+    ensureDefaultAdmin();
+  } else {
+    console.log('Skipping admin bootstrap (no valid service role key).');
+  }
 });

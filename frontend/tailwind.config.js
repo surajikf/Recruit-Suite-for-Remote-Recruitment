@@ -6,12 +6,18 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Inter", "system-ui", "Arial", "sans-serif"],
+      },
       colors: {
-        primary: '#0B79D0', // blue
+        // LinkedIn-inspired palette
+        primary: '#0A66C2',
+        primaryDark: '#004182',
+        primaryLight: '#E8F3FF',
         success: '#1FA66A', // green
         warning: '#F59E0B', // amber
         danger: '#EF4444', // red
-        background: '#F8FAFC', // light
+        background: '#F3F2EF', // LinkedIn light background
         surface: '#FFFFFF',
         text: '#0F172A', // dark
         muted: '#6B7280',

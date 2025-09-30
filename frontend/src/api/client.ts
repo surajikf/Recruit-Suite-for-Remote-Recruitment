@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ApiResponse, Job, Candidate, MatchScore, JobCreateRequest } from '../types';
+import type { ApiResponse, Job, Candidate, MatchScore, JobCreateRequest, AppUser } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -40,6 +40,21 @@ export const candidatesApi = {
 export const healthApi = {
   check: async (): Promise<ApiResponse<{ service: string }>> => {
     const response = await api.get('/health');
+    return response.data;
+  },
+};
+
+export const usersApi = {
+  getAll: async (): Promise<ApiResponse<AppUser[]>> => {
+    const response = await api.get('/users');
+    return response.data;
+  },
+  approve: async (id: string, approved: boolean): Promise<ApiResponse<AppUser>> => {
+    const response = await api.post(`/users/${id}/approve`, { approved });
+    return response.data;
+  },
+  updateRole: async (id: string, role: 'user' | 'admin'): Promise<ApiResponse<AppUser>> => {
+    const response = await api.post(`/users/${id}/role`, { role });
     return response.data;
   },
 };

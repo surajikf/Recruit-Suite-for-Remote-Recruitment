@@ -199,5 +199,19 @@ export const supabaseApi = {
         return { status: 'error', data: null, errors: [{ code: 'UPDATE_CANDIDATE_ERROR' }] };
       }
     }
+    ,
+    delete: async (candidateId: string): Promise<ApiResponse<null>> => {
+      try {
+        const { error } = await supabase
+          .from('candidates')
+          .delete()
+          .eq('id', candidateId);
+        if (error) throw error;
+        return { status: 'ok', data: null, errors: [] };
+      } catch (error) {
+        console.error('Error deleting candidate:', error);
+        return { status: 'error', data: null, errors: [{ code: 'DELETE_CANDIDATE_ERROR' }] };
+      }
+    }
   }
 };

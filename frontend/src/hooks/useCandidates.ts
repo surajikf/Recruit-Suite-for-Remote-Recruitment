@@ -57,8 +57,51 @@ export function useUpdateCandidateStatus() {
       }
       return response.data!;
     },
-    onSuccess: () => {
+    // Optimistic update - immediately update UI before server responds
+    onMutate: async ({ candidateId, status }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['candidates'] });
+
+      // Snapshot the previous value
+      const previousCandidates = queryClient.getQueryData<Candidate[]>(['candidates']);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<Candidate[]>(['candidates'], (old) => {
+        if (!old) return old;
+        return old.map((candidate) =>
+          candidate.id === candidateId
+            ? { ...candidate, status }
+            : candidate
+        );
+      });
+
+      // Return context with the snapshot
+      return { previousCandidates };
+    },
+    // If mutation fails, rollback to the previous value
+    onError: (err, variables, context) => {
+      if (context?.previousCandidates) {
+        queryClient.setQueryData(['candidates'], context.previousCandidates);
+      }
+      console.error('Failed to update candidate status:', err);
+    },
+    // Always refetch after error or success to ensure sync with server
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['candidates'] });
     },
+  });
+}
+
+export function useDeleteCandidate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (candidateId: string) => {
+      const response = await supabaseApi.candidates.delete(candidateId);
+      if (response.status === 'error') throw new Error('Failed to delete');
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['candidates'] });
+    }
   });
 }
