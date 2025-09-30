@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 
+// Navigation items - Calendar removed
 const nav = [
   { to: '/', label: 'Dashboard', icon: '📊' },
   { to: '/jobs', label: 'Jobs', icon: '💼' },
