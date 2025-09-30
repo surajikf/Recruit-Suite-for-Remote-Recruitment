@@ -8,7 +8,6 @@ const items: Item[] = [
   { to: '/candidates', label: 'Candidates', icon: '👥' },
   { to: '/shortlist', label: 'Pipeline', icon: '🔄' },
   { to: '/reports', label: 'Reports', icon: '📈' },
-  { to: '/calendar', label: 'Calendar', icon: '📅' },
   { to: '/admin', label: 'Admin', icon: '⚙️' },
 ]
 
