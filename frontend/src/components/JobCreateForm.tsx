@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import type { JobCreateRequest } from '../types';
+import { useState, useEffect } from 'react';
+import type { JobCreateRequest, Job } from '../types';
 
 interface JobCreateFormProps {
   onSubmit: (job: JobCreateRequest) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  initialData?: Job | null;
+  mode?: 'create' | 'edit';
 }
 
-export default function JobCreateForm({ onSubmit, onCancel, isLoading }: JobCreateFormProps) {
+export default function JobCreateForm({ onSubmit, onCancel, isLoading, initialData, mode = 'create' }: JobCreateFormProps) {
   const [formData, setFormData] = useState<JobCreateRequest>({
     title: '',
     description: '',
@@ -17,6 +19,22 @@ export default function JobCreateForm({ onSubmit, onCancel, isLoading }: JobCrea
     experience_max: 10,
     auto_match: false,
   });
+
+  // Populate form when editing
+  useEffect(() => {
+    if (initialData && mode === 'edit') {
+      setFormData({
+        title: initialData.title,
+        description: initialData.description || '',
+        skills: initialData.skills || [],
+        location: initialData.location || '',
+        experience_min: initialData.experience_min || 0,
+        experience_max: initialData.experience_max || 10,
+        salary_band: initialData.salary_band,
+        auto_match: initialData.auto_match !== false,
+      });
+    }
+  }, [initialData, mode]);
 
   const [skillInput, setSkillInput] = useState('');
 
@@ -48,7 +66,7 @@ export default function JobCreateForm({ onSubmit, onCancel, isLoading }: JobCrea
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Create New Job</h2>
+          <h2 className="text-xl font-semibold mb-4">{mode === 'edit' ? 'Edit Job' : 'Create New Job'}</h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -183,7 +201,7 @@ export default function JobCreateForm({ onSubmit, onCancel, isLoading }: JobCrea
                 disabled={isLoading || !formData.title || formData.skills.length === 0}
                 className="px-4 py-2 bg-[#0B79D0] text-white rounded-lg hover:bg-[#0a6cb9] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Creating...' : 'Create Job'}
+                {isLoading ? (mode === 'edit' ? 'Updating...' : 'Creating...') : (mode === 'edit' ? 'Update Job' : 'Create Job')}
               </button>
             </div>
           </form>

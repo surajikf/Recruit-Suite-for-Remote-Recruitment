@@ -9,10 +9,11 @@ interface JobListProps {
   jobs: Job[];
   onJobClick: (job: Job) => void;
   onCreateJob: () => void;
+  onEditJob?: (job: Job) => void;
   view?: JobViewMode;
 }
 
-export default function JobList({ jobs, onJobClick, onCreateJob, view = 'auto' }: JobListProps) {
+export default function JobList({ jobs, onJobClick, onCreateJob, onEditJob, view = 'auto' }: JobListProps) {
   const updateStatus = useUpdateJobStatus();
   const deleteJob = useDeleteJob();
   const [sortKey, setSortKey] = useState<'title'|'status'|'location'|'experience'|'skills'>('title' as any);
@@ -297,6 +298,13 @@ export default function JobList({ jobs, onJobClick, onCreateJob, view = 'auto' }
                   ) : null
                 ))}
                 <td className="px-4 py-3 text-right">
+                  {onEditJob && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEditJob(job); }}
+                      className="px-3 py-1 text-xs rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50 mr-2"
+                      title="Edit job"
+                    >Edit</button>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); updateStatus.mutate({ id: job.id, status: job.status === 'published' ? 'closed' : 'published' })}}
                     className="px-3 py-1 text-xs rounded-md border border-gray-200 hover:bg-gray-50 mr-2"
@@ -343,6 +351,15 @@ export default function JobList({ jobs, onJobClick, onCreateJob, view = 'auto' }
                   </div>
                 </div>
                 <div className="ml-4 flex items-start gap-2">
+                  {onEditJob && (
+                    <button
+                      onClick={() => onEditJob(job)}
+                      className="px-3 py-1 text-xs rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50"
+                      title="Edit job"
+                    >
+                      Edit
+                    </button>
+                  )}
                   <button
                     onClick={() => updateStatus.mutate({ id: job.id, status: job.status === 'published' ? 'closed' : 'published' })}
                     className="px-3 py-1 text-xs rounded-md border border-gray-200 hover:bg-gray-50"

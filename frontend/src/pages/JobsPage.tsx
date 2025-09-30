@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { useJobs, useCreateJob } from '../hooks/useJobs';
+import { useJobs, useCreateJob, useUpdateJob } from '../hooks/useJobs';
 import type { JobCreateRequest, Job } from '../types';
 import JobList from '../components/JobList';
 import JobCreateForm from '../components/JobCreateForm';
@@ -10,6 +10,7 @@ import PageHeader from '../components/PageHeader';
 export default function JobsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
   
   const { data: jobs = [], isLoading } = useJobs();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -68,6 +69,7 @@ export default function JobsPage() {
     if (searchParams.get('new') === 'job') setShowCreateForm(true);
   }, [searchParams]);
   const createJobMutation = useCreateJob();
+  const updateJobMutation = useUpdateJob();
 
   const handleCreateJob = async (jobData: JobCreateRequest) => {
     try {
@@ -76,6 +78,24 @@ export default function JobsPage() {
     } catch (error) {
       console.error('Failed to create job:', error);
     }
+  };
+
+  const handleUpdateJob = async (jobData: JobCreateRequest) => {
+    if (!editingJob) return;
+    try {
+      await updateJobMutation.mutateAsync({
+        id: editingJob.id,
+        data: jobData
+      });
+      setEditingJob(null);
+    } catch (error) {
+      console.error('Failed to update job:', error);
+    }
+  };
+
+  const handleEditJob = (job: Job) => {
+    setEditingJob(job);
+    setSelectedJob(null);
   };
 
   const handleJobClick = (job: Job) => {
@@ -134,6 +154,7 @@ export default function JobsPage() {
         jobs={filtered}
         onJobClick={handleJobClick}
         onCreateJob={() => setShowCreateForm(true)}
+        onEditJob={handleEditJob}
         view={view}
       />
 
@@ -142,6 +163,17 @@ export default function JobsPage() {
           onSubmit={handleCreateJob}
           onCancel={() => setShowCreateForm(false)}
           isLoading={createJobMutation.isPending}
+          mode="create"
+        />
+      )}
+
+      {editingJob && (
+        <JobCreateForm
+          onSubmit={handleUpdateJob}
+          onCancel={() => setEditingJob(null)}
+          isLoading={updateJobMutation.isPending}
+          initialData={editingJob}
+          mode="edit"
         />
       )}
 
