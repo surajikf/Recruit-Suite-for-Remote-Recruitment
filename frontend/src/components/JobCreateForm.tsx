@@ -260,8 +260,6 @@ export default function JobCreateForm({ onSubmit, onCancel, isLoading, initialDa
             {isLoading ? (mode === 'edit' ? 'Updating...' : 'Creating...') : (mode === 'edit' ? 'Update Job' : 'Create Job')}
           </button>
         </div>
-          </form>
-        </div>
       </div>
     </div>
   );
