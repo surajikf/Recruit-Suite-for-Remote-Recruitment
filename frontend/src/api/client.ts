@@ -1,8 +1,11 @@
 import axios from 'axios';
 import type { ApiResponse, Job, Candidate, MatchScore, JobCreateRequest, AppUser } from '../types';
 
+// Use environment variable for API URL, fallback to /api for local dev
+const apiBaseURL = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },

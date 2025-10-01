@@ -23,7 +23,8 @@ export function useUploadResumes() {
         formData.append('files', file);
       });
 
-      const response = await fetch('/api/upload/resumes', {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/upload/resumes`, {
         method: 'POST',
         body: formData,
       });
