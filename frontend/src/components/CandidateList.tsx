@@ -32,6 +32,18 @@ export default function CandidateList({
   const [colWidths, setColWidths] = useState<Record<string, number>>({});
   const [optionalOrder, setOptionalOrder] = useState<CandidateOptionalColumn[]>(CANDIDATE_DEFAULT_ORDER);
   const [dragKey, setDragKey] = useState<CandidateOptionalColumn | null>(null);
+  const deleteMutation = useDeleteCandidate();
+  
+  const handleDelete = async (e: React.MouseEvent, candidateId: string, candidateName: string) => {
+    e.stopPropagation();
+    if (confirm(`Are you sure you want to delete ${candidateName}?`)) {
+      try {
+        await deleteMutation.mutateAsync(candidateId);
+      } catch (error) {
+        alert('Failed to delete candidate');
+      }
+    }
+  };
 
   // Load/save preferences
   useEffect(() => {
@@ -414,6 +426,7 @@ export default function CandidateList({
                   </th>
                 ) : null
               ))}
+              <th className="px-6 py-4 font-bold text-slate-700">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -426,11 +439,11 @@ export default function CandidateList({
                 case 'skills': return ((a.skills?.length||0)-(b.skills?.length||0))*dir;
               }
             }).slice((page-1)*pageSize, (page-1)*pageSize+pageSize).map(c => (
-              <tr key={c.id} className="border-t border-slate-100 hover:bg-blue-50/50 transition-all cursor-pointer group" onClick={() => onCandidateClick(c)}>
-                <td className="px-6 py-4 font-semibold text-slate-900 group-hover:text-blue-700">{c.name}</td>
+              <tr key={c.id} className="border-t border-slate-100 hover:bg-blue-50/50 transition-all group">
+                <td className="px-6 py-4 font-semibold text-slate-900 group-hover:text-blue-700 cursor-pointer" onClick={() => onCandidateClick(c)}>{c.name}</td>
                 {optionalOrder.map((key) => (
                   columns[key] ? (
-                    <td key={key} className="px-6 py-4">
+                    <td key={key} className="px-6 py-4 cursor-pointer" onClick={() => onCandidateClick(c)}>
                       {key === 'email' && <span className="text-slate-600">{c.email}</span>}
                       {key === 'status' && <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(c.status)} shadow-sm`}>{c.status}</span>}
                       {key === 'experience' && <span className="text-slate-700 font-medium">{c.experience_years} yrs</span>}
@@ -438,6 +451,17 @@ export default function CandidateList({
                     </td>
                   ) : null
                 ))}
+                <td className="px-6 py-4">
+                  <button
+                    onClick={(e) => handleDelete(e, c.id, c.name)}
+                    className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete candidate"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
