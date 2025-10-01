@@ -17,28 +17,27 @@ export function useUploadResumes() {
 
   return useMutation({
     mutationFn: async (files: File[]) => {
-      // Mock upload - in real app, this would upload files and parse them
-      const mockCandidates: Omit<Candidate, 'id' | 'created_at'>[] = files.map((file, index) => ({
-        name: `Candidate ${index + 1}`,
-        email: `candidate${index + 1}@example.com`,
-        phone: `+1-555-000${index + 1}`,
-        skills: ['React', 'TypeScript', 'Node.js', 'Python', 'AWS'],
-        experience_years: Math.floor(Math.random() * 10) + 1,
-        status: 'new' as const,
-        resumes: [file.name],
-        parsed_text: `Parsed content from ${file.name}\n\nThis is a mock parsed resume content. In a real application, this would contain the extracted text from the uploaded resume file.`,
-      }));
+      // Upload files to backend API which uses AI to parse resumes
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('files', file);
+      });
 
-      // Create candidates in Supabase
-      const results = [];
-      for (const candidate of mockCandidates) {
-        const response = await supabaseApi.candidates.create(candidate);
-        if (response.status === 'ok' && response.data) {
-          results.push(response.data);
-        }
+      const response = await fetch('/api/upload/resumes', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload resumes');
       }
 
-      return results;
+      const result = await response.json();
+      if (result.status === 'error') {
+        throw new Error(result.errors[0]?.message || 'Upload failed');
+      }
+
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['candidates'] });
