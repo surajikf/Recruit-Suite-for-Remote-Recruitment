@@ -113,30 +113,52 @@ export default function CandidatePreview({
                 </h3>
                 {candidate.resumes.length > 0 ? (
                   <div className="space-y-2">
-                    {candidate.resumes.map((resume, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <span className="text-sm text-gray-700 font-medium">{resume}</span>
-                        <button 
-                          onClick={() => {
-                            // Check if it's a URL (starts with http)
-                            if (resume.startsWith('http')) {
-                              // Open the actual PDF/resume in a new tab
-                              window.open(resume, '_blank', 'noopener,noreferrer');
-                            } else {
-                              // Old data without URL - show alert
-                              alert('This resume was uploaded before PDF storage was enabled. Please re-upload the resume to view it.');
-                            }
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-primary-600 hover:text-white hover:bg-primary-600 border border-primary-600 rounded-lg text-sm font-medium transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          View PDF
-                        </button>
-                      </div>
-                    ))}
+                    {candidate.resumes.map((resume, index) => {
+                      // Extract filename from URL or use as-is
+                      const fileName = resume.startsWith('http') 
+                        ? decodeURIComponent(resume.split('/').pop() || resume)
+                        : resume;
+                      
+                      return (
+                        <div key={index} className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                            </svg>
+                            <span className="text-sm text-gray-700 font-medium truncate" title={fileName}>
+                              {fileName}
+                            </span>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              // Check if it's a URL (starts with http)
+                              if (resume.startsWith('http')) {
+                                // Open the actual PDF/resume in a new tab
+                                const opened = window.open(resume, '_blank', 'noopener,noreferrer');
+                                if (!opened) {
+                                  alert('Please allow popups for this site to view the PDF');
+                                }
+                              } else {
+                                // Old data without URL - show detailed instructions
+                                alert('⚠️ This resume was uploaded before PDF storage was enabled.\n\n' +
+                                  'To view this resume:\n' +
+                                  '1. Go to Supabase Dashboard\n' +
+                                  '2. Create a "resumes" storage bucket\n' +
+                                  '3. Re-upload this resume\n\n' +
+                                  'Or check: SUPABASE_STORAGE_SETUP.md for instructions');
+                              }
+                            }}
+                            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-primary-600 hover:text-white hover:bg-primary-600 border border-primary-600 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500 italic">No resume uploaded</p>

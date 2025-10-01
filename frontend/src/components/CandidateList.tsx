@@ -32,6 +32,7 @@ export default function CandidateList({
   const [colWidths, setColWidths] = useState<Record<string, number>>({});
   const [optionalOrder, setOptionalOrder] = useState<CandidateOptionalColumn[]>(CANDIDATE_DEFAULT_ORDER);
   const [dragKey, setDragKey] = useState<CandidateOptionalColumn | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deleteMutation = useDeleteCandidate();
   
   const handleDelete = async (e: React.MouseEvent, candidateId: string, candidateName: string) => {
@@ -42,6 +43,38 @@ export default function CandidateList({
       } catch (error) {
         alert('Failed to delete candidate');
       }
+    }
+  };
+  
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (confirm(`Are you sure you want to delete ${selectedIds.size} candidate(s)?`)) {
+      try {
+        for (const id of selectedIds) {
+          await deleteMutation.mutateAsync(id);
+        }
+        setSelectedIds(new Set());
+      } catch (error) {
+        alert('Failed to delete some candidates');
+      }
+    }
+  };
+  
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+  
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredCandidates.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredCandidates.map(c => c.id)));
     }
   };
 
@@ -380,6 +413,17 @@ export default function CandidateList({
                 </svg>
               </button>
             </div>
+            {selectedIds.size > 0 && (
+              <button 
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm hover:shadow transition-all flex items-center gap-2" 
+                onClick={handleBulkDelete}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete Selected ({selectedIds.size})
+              </button>
+            )}
             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm hover:shadow transition-all flex items-center gap-2" onClick={exportCsv}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -440,6 +484,15 @@ export default function CandidateList({
               }
             }).slice((page-1)*pageSize, (page-1)*pageSize+pageSize).map(c => (
               <tr key={c.id} className="border-t border-slate-100 hover:bg-blue-50/50 transition-all group">
+                <td className="px-4 py-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(c.id)}
+                    onChange={() => toggleSelect(c.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                </td>
                 <td className="px-6 py-4 font-semibold text-slate-900 group-hover:text-blue-700 cursor-pointer" onClick={() => onCandidateClick(c)}>{c.name}</td>
                 {optionalOrder.map((key) => (
                   columns[key] ? (
