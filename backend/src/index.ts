@@ -3,6 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import pdf from 'pdf-parse';
 import { supabase } from './lib/supabase';
 import { geminiService } from './lib/gemini';
 import type { User } from '@supabase/supabase-js';
@@ -215,13 +216,29 @@ app.post('/api/upload/resumes', upload.array('files'), async (req: Request, res:
       fs.writeFileSync(localPath, file.buffer);
       const publicUrl = `${publicBaseUrl}/uploads/resumes/${objectPath}`;
 
-      // Extract text from resume (simplified - in production, use a proper PDF parser)
+      // Extract text from resume using proper PDF parser
       let resumeText = '';
-      if (file.mimetype === 'text/plain') {
-        resumeText = file.buffer.toString('utf-8');
-      } else {
-        // For PDFs and other formats, we'll use a placeholder
-        resumeText = `Resume: ${file.originalname}\n\nThis is a placeholder for resume content. In a production environment, you would use a proper PDF parser to extract text from the uploaded file.`;
+      try {
+        if (file.mimetype === 'text/plain') {
+          resumeText = file.buffer.toString('utf-8');
+        } else if (file.mimetype === 'application/pdf') {
+          const pdfData = await pdf(file.buffer);
+          resumeText = pdfData.text;
+        } else if (file.mimetype === 'application/msword' || 
+                   file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+          // For DOC/DOCX, we'll extract what we can or use filename
+          resumeText = `Resume file: ${file.originalname}\nPlease note: For best results, upload PDF or TXT format.`;
+        } else {
+          resumeText = `Resume file: ${file.originalname}`;
+        }
+        
+        // If no text extracted, use filename as fallback
+        if (!resumeText.trim()) {
+          resumeText = `Resume: ${file.originalname}`;
+        }
+      } catch (parseError) {
+        console.error('Error parsing resume file:', parseError);
+        resumeText = `Resume: ${file.originalname}\n\nError parsing file content. Please ensure the file is not corrupted.`;
       }
 
       // Use AI to analyze the resume

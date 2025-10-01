@@ -453,9 +453,19 @@ export default function ShortlistPage() {
                     className="flex-1 btn btn-primary" 
                     onClick={async () => {
                       try {
+                        // Validate required fields
+                        if (!quickAdd.name?.trim()) {
+                          alert('Please enter candidate name');
+                          return;
+                        }
+                        if (!quickAdd.email?.trim() || !quickAdd.email.includes('@')) {
+                          alert('Please enter a valid email address');
+                          return;
+                        }
+                        
                         const payload = {
-                          name: quickAdd.name || 'Unnamed',
-                          email: quickAdd.email || `${Date.now()}@placeholder.local`,
+                          name: quickAdd.name.trim(),
+                          email: quickAdd.email.trim(),
                           phone: '',
                           skills: quickAdd.skills.split(',').map(s => s.trim()).filter(Boolean),
                           experience_years: quickAdd.experience_years || 0,
@@ -463,15 +473,23 @@ export default function ShortlistPage() {
                           resumes: [],
                           parsed_text: ''
                         };
-                        await fetch('/api/candidates', { 
+                        const response = await fetch('/api/candidates', { 
                           method: 'POST', 
                           headers: { 'Content-Type': 'application/json' }, 
                           body: JSON.stringify(payload)
                         });
+                        
+                        if (!response.ok) {
+                          throw new Error('Failed to add candidate');
+                        }
+                        
                         setShowQuickAdd(false);
                         setQuickAdd({ name: '', email: '', experience_years: 0, skills: '' });
+                        // Refresh candidates list
+                        window.location.reload();
                       } catch (e) {
                         console.error('Failed to add candidate', e);
+                        alert('Failed to add candidate. Please try again.');
                       }
                     }}
                   >

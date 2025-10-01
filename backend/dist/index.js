@@ -8,6 +8,7 @@ const cors_1 = __importDefault(require("cors"));
 const multer_1 = __importDefault(require("multer"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const pdf_parse_1 = __importDefault(require("pdf-parse"));
 const supabase_1 = require("./lib/supabase");
 const gemini_1 = require("./lib/gemini");
 const app = (0, express_1.default)();
@@ -212,14 +213,32 @@ app.post('/api/upload/resumes', upload.array('files'), async (req, res) => {
             const localPath = path_1.default.join(resumesDir, objectPath);
             fs_1.default.writeFileSync(localPath, file.buffer);
             const publicUrl = `${publicBaseUrl}/uploads/resumes/${objectPath}`;
-            // Extract text from resume (simplified - in production, use a proper PDF parser)
+            // Extract text from resume using proper PDF parser
             let resumeText = '';
-            if (file.mimetype === 'text/plain') {
-                resumeText = file.buffer.toString('utf-8');
+            try {
+                if (file.mimetype === 'text/plain') {
+                    resumeText = file.buffer.toString('utf-8');
+                }
+                else if (file.mimetype === 'application/pdf') {
+                    const pdfData = await (0, pdf_parse_1.default)(file.buffer);
+                    resumeText = pdfData.text;
+                }
+                else if (file.mimetype === 'application/msword' ||
+                    file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                    // For DOC/DOCX, we'll extract what we can or use filename
+                    resumeText = `Resume file: ${file.originalname}\nPlease note: For best results, upload PDF or TXT format.`;
+                }
+                else {
+                    resumeText = `Resume file: ${file.originalname}`;
+                }
+                // If no text extracted, use filename as fallback
+                if (!resumeText.trim()) {
+                    resumeText = `Resume: ${file.originalname}`;
+                }
             }
-            else {
-                // For PDFs and other formats, we'll use a placeholder
-                resumeText = `Resume: ${file.originalname}\n\nThis is a placeholder for resume content. In a production environment, you would use a proper PDF parser to extract text from the uploaded file.`;
+            catch (parseError) {
+                console.error('Error parsing resume file:', parseError);
+                resumeText = `Resume: ${file.originalname}\n\nError parsing file content. Please ensure the file is not corrupted.`;
             }
             // Use AI to analyze the resume
             let analysis;
