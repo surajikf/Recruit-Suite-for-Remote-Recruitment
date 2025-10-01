@@ -10,7 +10,7 @@ import { ToastContainer } from '../components/Toast';
 export default function ShortlistPage() {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [query, setQuery] = useState('');
-  const [compact, setCompact] = useState(true);
+  const [compact, setCompact] = useState(false);
   const [groupBy, setGroupBy] = useState<'none' | 'skill'>('none');
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -211,19 +211,6 @@ export default function ShortlistPage() {
               </svg>
               Filters
               <kbd className="hidden md:inline px-1.5 py-0.5 text-xs bg-white/20 rounded">⌘F</kbd>
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setCompact(!compact)}
-              className="btn btn-secondary flex items-center gap-2"
-              title="Toggle compact view"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-              {compact ? 'Compact' : 'Detailed'}
             </motion.button>
           </div>
         </div>
