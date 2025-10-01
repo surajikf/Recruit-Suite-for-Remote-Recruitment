@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseApi } from '../api/supabase';
 import type { Candidate } from '../types';
 import * as pdfjsLib from 'pdfjs-dist';
+import { getSupabase } from '../lib/supabase';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -37,6 +38,20 @@ async function extractTextFromPDF(file: File): Promise<string> {
     console.error('PDF extraction failed:', error);
     return '';
   }
+}
+
+// Extract email from resume text
+function extractEmailFromText(text: string): string | null {
+  // Common email pattern
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  const emails = text.match(emailRegex);
+  
+  if (emails && emails.length > 0) {
+    // Return the first email found
+    return emails[0];
+  }
+  
+  return null;
 }
 
 // Simple name extraction from text
@@ -81,17 +96,26 @@ export function useUploadResumes() {
 
   return useMutation({
     mutationFn: async (files: File[]) => {
+      const supabase = getSupabase();
+      if (!supabase) throw new Error('Supabase not initialized');
+      
       const results = [];
       
       for (const file of files) {
         const fileName = file.name;
         let candidateName = 'Unnamed Candidate';
+        let candidateEmail = '';
         let resumeText = '';
         
         // Extract text from PDF
         if (file.type === 'application/pdf') {
           resumeText = await extractTextFromPDF(file);
           candidateName = extractNameFromText(resumeText, fileName);
+          // Extract email from resume text
+          const extractedEmail = extractEmailFromText(resumeText);
+          if (extractedEmail) {
+            candidateEmail = extractedEmail;
+          }
         } else {
           // For non-PDF files, use filename
           candidateName = fileName
@@ -101,20 +125,48 @@ export function useUploadResumes() {
             .trim() || 'Unnamed Candidate';
         }
 
-        // Generate email
-        const emailBase = candidateName.toLowerCase().replace(/\s+/g, '.');
-        const timestamp = Date.now();
-        const email = `${emailBase}.${timestamp}@candidate.local`;
+        // Generate clean email if not found in resume
+        if (!candidateEmail) {
+          const emailBase = candidateName
+            .toLowerCase()
+            .replace(/\s+/g, '')
+            .substring(0, 20); // Limit length
+          const randomId = Math.random().toString(36).substring(2, 8); // Short random ID
+          candidateEmail = `${emailBase}.${randomId}@example.com`;
+        }
+
+        // Upload PDF to Supabase Storage
+        const fileExt = fileName.split('.').pop();
+        const filePath = `${Date.now()}-${candidateName.replace(/\s+/g, '-')}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('resumes')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          // Continue with just filename if upload fails
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('resumes')
+          .getPublicUrl(filePath);
+
+        const resumeUrl = uploadData ? urlData.publicUrl : fileName;
 
         // Create candidate
         const candidate = {
           name: candidateName,
-          email: email,
+          email: candidateEmail,
           phone: '',
           skills: ['JavaScript', 'React', 'Node.js'],
           experience_years: Math.floor(Math.random() * 10) + 1,
           status: 'new' as const,
-          resumes: [fileName],
+          resumes: [resumeUrl], // Store the public URL
           parsed_text: resumeText || `Resume file: ${fileName}`
         };
 

@@ -118,16 +118,22 @@ export default function CandidatePreview({
                         <span className="text-sm text-gray-700 font-medium">{resume}</span>
                         <button 
                           onClick={() => {
-                            // Create a blob from the parsed text and download it
-                            const blob = new Blob([candidate.parsed_text || 'No content available'], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = resume.replace(/\.[^/.]+$/, '.txt');
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
+                            // Check if it's a URL (starts with http)
+                            if (resume.startsWith('http')) {
+                              // Open the PDF in a new tab
+                              window.open(resume, '_blank');
+                            } else {
+                              // Fallback: download parsed text
+                              const blob = new Blob([candidate.parsed_text || 'No content available'], { type: 'text/plain' });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = resume.replace(/\.[^/.]+$/, '.txt');
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(url);
+                            }
                           }}
                           className="text-primary-600 hover:text-primary-700 text-sm font-medium hover:underline"
                         >
