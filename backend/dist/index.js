@@ -182,6 +182,22 @@ app.post('/api/candidates', async (req, res) => {
         res.status(500).json({ status: 'error', data: null, errors: [{ code: 'CREATE_CANDIDATE_ERROR' }] });
     }
 });
+// Delete all candidates
+app.delete('/api/candidates', async (_req, res) => {
+    try {
+        const { error } = await supabase_1.supabase
+            .from('candidates')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+        if (error)
+            throw error;
+        res.json({ status: 'ok', data: { message: 'All candidates deleted successfully' }, errors: [] });
+    }
+    catch (error) {
+        console.error('Error deleting candidates:', error);
+        res.status(500).json({ status: 'error', data: null, errors: [{ code: 'DELETE_CANDIDATES_ERROR' }] });
+    }
+});
 // Upload resumes and create candidates with AI processing
 app.post('/api/upload/resumes', upload.array('files'), async (req, res) => {
     try {
