@@ -118,37 +118,6 @@ export default function ShortlistKanban({
 
   return (
     <div className="space-y-6">
-      {/* Stats Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-6 flex-wrap">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#0B79D0] animate-pulse"></div>
-              <span className="text-sm font-semibold text-slate-700">
-                {candidates.length} Total Candidates
-              </span>
-            </div>
-            {STAGES.map((stage) => {
-              const count = getCandidatesByStatus(stage.id as Candidate['status']).length;
-              return (
-                <div key={stage.id} className="flex items-center gap-2">
-                  <span className="text-lg">{stage.icon}</span>
-                  <span className="text-sm text-slate-600">
-                    <span className="font-semibold text-slate-900">{count}</span> {stage.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-slate-500 bg-blue-50 px-3 py-2 rounded-lg">
-            <svg className="w-4 h-4 text-[#0B79D0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
-            </svg>
-            <span className="font-medium">Click and drag cards to move between stages</span>
-          </div>
-        </div>
-      </div>
-
       {/* Horizontal Kanban Board */}
       <div className="overflow-x-auto pb-4">
         <div className="flex gap-4 min-w-max">
