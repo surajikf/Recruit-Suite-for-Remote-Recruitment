@@ -42,16 +42,37 @@ async function extractTextFromPDF(file: File): Promise<string> {
 
 // Extract email from resume text
 function extractEmailFromText(text: string): string | null {
-  // Common email pattern
-  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  // More comprehensive email pattern
+  const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
   const emails = text.match(emailRegex);
   
   if (emails && emails.length > 0) {
-    // Return the first email found
-    return emails[0];
+    // Filter out common non-personal emails and return first valid one
+    const validEmail = emails.find(email => {
+      const lowerEmail = email.toLowerCase();
+      return !lowerEmail.includes('example.com') &&
+             !lowerEmail.includes('domain.com') &&
+             !lowerEmail.includes('yourcompany.com') &&
+             !lowerEmail.includes('candidate.local');
+    });
+    
+    return validEmail || emails[0]; // Return first valid or just first email
   }
   
   return null;
+}
+
+// Extract phone from resume text
+function extractPhoneFromText(text: string): string {
+  // Common phone patterns
+  const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
+  const phones = text.match(phoneRegex);
+  
+  if (phones && phones.length > 0) {
+    return phones[0];
+  }
+  
+  return '';
 }
 
 // Simple name extraction from text
@@ -105,17 +126,28 @@ export function useUploadResumes() {
         const fileName = file.name;
         let candidateName = 'Unnamed Candidate';
         let candidateEmail = '';
+        let candidatePhone = '';
         let resumeText = '';
         
         // Extract text from PDF
         if (file.type === 'application/pdf') {
           resumeText = await extractTextFromPDF(file);
+          
+          // Log the extracted text for debugging
+          console.log('Extracted text from PDF:', resumeText.substring(0, 500));
+          
           candidateName = extractNameFromText(resumeText, fileName);
-          // Extract email from resume text
+          
+          // Extract email and phone from resume text
           const extractedEmail = extractEmailFromText(resumeText);
           if (extractedEmail) {
             candidateEmail = extractedEmail;
+            console.log('Found email:', extractedEmail);
+          } else {
+            console.log('No email found in resume text');
           }
+          
+          candidatePhone = extractPhoneFromText(resumeText);
         } else {
           // For non-PDF files, use filename
           candidateName = fileName
@@ -133,6 +165,7 @@ export function useUploadResumes() {
             .substring(0, 20); // Limit length
           const randomId = Math.random().toString(36).substring(2, 8); // Short random ID
           candidateEmail = `${emailBase}.${randomId}@example.com`;
+          console.log('Using fallback email:', candidateEmail);
         }
 
         // Upload PDF to Supabase Storage
@@ -162,7 +195,7 @@ export function useUploadResumes() {
         const candidate = {
           name: candidateName,
           email: candidateEmail,
-          phone: '',
+          phone: candidatePhone,
           skills: ['JavaScript', 'React', 'Node.js'],
           experience_years: Math.floor(Math.random() * 10) + 1,
           status: 'new' as const,
