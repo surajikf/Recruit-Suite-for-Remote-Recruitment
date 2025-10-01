@@ -64,41 +64,45 @@ export default function TopNav() {
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="container h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center group">
+      <div className="container h-16 flex items-center justify-between gap-4 px-4">
+        {/* Logo - Compact */}
+        <Link to="/" className="flex items-center group flex-shrink-0">
           <div className="w-10 h-10 rounded-lg bg-primary-600 text-white flex items-center justify-center group-hover:bg-primary-700 transition-colors duration-200">
             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6"/>
             </svg>
           </div>
-          <div className="ml-3 hidden sm:block">
-            <h1 className="text-lg font-semibold text-gray-900">IKF Recruit Suite</h1>
-            <p className="text-xs text-gray-500">Professional Recruitment Platform</p>
+          <div className="ml-2 hidden xl:block">
+            <h1 className="text-base font-semibold text-gray-900 leading-tight">IKF Recruit Suite</h1>
+            <p className="text-xs text-gray-500 leading-tight">Professional Recruitment Platform</p>
           </div>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-1">
+        {/* Navigation - Centered */}
+        <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
           {nav.map(item => {
             const active = location.pathname === item.to
             return (
               <Link 
                 key={item.to} 
                 to={item.to} 
-                className={`nav-item ${active ? 'nav-item-active' : 'nav-item-inactive'}`}
+                className={`nav-item text-sm px-3 py-2 ${active ? 'nav-item-active' : 'nav-item-inactive'}`}
               >
-                <span className="mr-2">{item.icon}</span>
+                <span className="mr-1.5">{item.icon}</span>
                 {item.label}
               </Link>
             )
           })}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center">
+        {/* Right Side - Search, Reminders, Profile */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Search Box */}
+          <div className="hidden lg:flex items-center">
             <div className="relative" ref={searchRef}>
               <input 
-                className="input w-72 pl-10" 
-                placeholder="Search jobs, candidates, skills..."
+                className="input w-56 pl-9 pr-3 py-1.5 text-sm" 
+                placeholder="Search jobs, candidates..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value)
@@ -112,7 +116,7 @@ export default function TopNav() {
               
               {/* Search Results Dropdown */}
               {showResults && searchQuery.trim() && (
-                <div className="absolute top-full mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
+                <div className="absolute top-full mt-2 w-80 right-0 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-[60]">
                   {!hasResults ? (
                     <div className="p-4 text-center text-gray-500 text-sm">
                       No results found for "{searchQuery}"
@@ -129,15 +133,15 @@ export default function TopNav() {
                             <button
                               key={job.id}
                               onClick={() => handleJobClick(job)}
-                              className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-md transition-colors"
+                              className="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-md transition-colors"
                             >
                               <div className="font-medium text-gray-900 text-sm">{job.title}</div>
-                              <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                              <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
                                 <span>{job.location || 'Remote'}</span>
                                 {job.skills && job.skills.length > 0 && (
                                   <>
                                     <span>•</span>
-                                    <span>{job.skills.slice(0, 3).join(', ')}</span>
+                                    <span className="truncate">{job.skills.slice(0, 3).join(', ')}</span>
                                   </>
                                 )}
                               </div>
@@ -156,15 +160,15 @@ export default function TopNav() {
                             <button
                               key={candidate.id}
                               onClick={() => handleCandidateClick(candidate)}
-                              className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-md transition-colors"
+                              className="w-full text-left px-3 py-2 hover:bg-green-50 rounded-md transition-colors"
                             >
                               <div className="font-medium text-gray-900 text-sm">{candidate.name}</div>
-                              <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                                <span>{candidate.email}</span>
+                              <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
+                                <span className="truncate max-w-[200px]">{candidate.email}</span>
                                 {candidate.skills && candidate.skills.length > 0 && (
                                   <>
                                     <span>•</span>
-                                    <span>{candidate.skills.slice(0, 3).join(', ')}</span>
+                                    <span className="truncate">{candidate.skills.slice(0, 3).join(', ')}</span>
                                   </>
                                 )}
                               </div>
@@ -179,18 +183,20 @@ export default function TopNav() {
             </div>
           </div>
           
-          <button className="btn btn-secondary btn-sm">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-5a7.5 7.5 0 00-15 0v5h5l-5 5-5-5h5v-5a7.5 7.5 0 0115 0v5z"/>
+          {/* Reminders Button */}
+          <button className="btn btn-secondary btn-sm text-xs px-2 py-1.5 hidden xl:flex items-center">
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
             </svg>
             Reminders
           </button>
           
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {/* Profile Icon */}
+          <button className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center hover:shadow-md transition-shadow">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
-          </div>
+          </button>
         </div>
       </div>
     </header>
