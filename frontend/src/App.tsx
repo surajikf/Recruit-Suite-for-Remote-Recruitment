@@ -11,7 +11,6 @@ import { useState, useEffect } from 'react';
 import { ProgressProvider } from './context/ProgressContext';
 import AppErrorBoundary from './components/AppErrorBoundary';
 import ProgressTracker from './components/ProgressTracker';
-import RemindersDropdown from './components/RemindersDropdown';
 import TopNav from './components/TopNav';
 import SectionCard from './components/SectionCard';
 import LoginPage from './pages/LoginPage';
