@@ -3,8 +3,8 @@ import type { Candidate } from '../types';
 import { useDeleteCandidate } from '../hooks/useCandidates';
 
 type CandidateViewMode = 'auto' | 'table' | 'cards'
-type CandidateOptionalColumn = 'email' | 'status' | 'experience' | 'skills';
-const CANDIDATE_DEFAULT_ORDER: CandidateOptionalColumn[] = ['email','status','experience','skills'];
+type CandidateOptionalColumn = 'email' | 'phone' | 'status' | 'experience' | 'skills';
+const CANDIDATE_DEFAULT_ORDER: CandidateOptionalColumn[] = ['email','phone','status','experience','skills'];
 interface CandidateListProps {
   candidates: Candidate[];
   onCandidateClick: (candidate: Candidate) => void;
@@ -28,7 +28,7 @@ export default function CandidateList({
   const [tableSort, setTableSort] = useState<{key:'name'|'status'|'experience'|'skills', dir:'asc'|'desc'}>({key:'name', dir:'asc'});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [columns, setColumns] = useState<{email:boolean; status:boolean; experience:boolean; skills:boolean}>({ email: true, status: true, experience: true, skills: true });
+  const [columns, setColumns] = useState<{email:boolean; phone:boolean; status:boolean; experience:boolean; skills:boolean}>({ email: true, phone: true, status: true, experience: true, skills: true });
   const [colWidths, setColWidths] = useState<Record<string, number>>({});
   const [optionalOrder, setOptionalOrder] = useState<CandidateOptionalColumn[]>(CANDIDATE_DEFAULT_ORDER);
   const [dragKey, setDragKey] = useState<CandidateOptionalColumn | null>(null);
@@ -372,13 +372,17 @@ export default function CandidateList({
       )}
 
       {/* Enhanced table view */}
-      <div className={`${view === 'cards' ? 'hidden' : ''} ${view === 'table' ? '' : 'hidden lg:block'} bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg animate-fade`}>        
+      <div className={`${view === 'cards' ? 'hidden' : view === 'table' ? 'block' : 'hidden lg:block'} bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg animate-fade`}>        
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
           <div className="flex items-center gap-4 text-sm">
             <span className="text-slate-700 font-semibold">Columns:</span>
             <label className="inline-flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors">
               <input type="checkbox" checked={columns.email} onChange={e=>setColumns({...columns, email: e.target.checked})} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"/> 
               <span>Email</span>
+            </label>
+            <label className="inline-flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors">
+              <input type="checkbox" checked={columns.phone} onChange={e=>setColumns({...columns, phone: e.target.checked})} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"/> 
+              <span>Phone</span>
             </label>
             <label className="inline-flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors">
               <input type="checkbox" checked={columns.status} onChange={e=>setColumns({...columns, status: e.target.checked})} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"/> 
@@ -468,7 +472,7 @@ export default function CandidateList({
                     onDrop={onDrop(key)}
                   >
                     <div className="flex items-center gap-2">
-                      {key === 'email' ? 'Email' : key === 'status' ? 'Status' : key === 'experience' ? 'Experience' : 'Skills'}
+                      {key === 'email' ? 'Email' : key === 'phone' ? 'Phone' : key === 'status' ? 'Status' : key === 'experience' ? 'Experience' : 'Skills'}
                       {tableSort.key === key && key !== 'email' && (
                         <svg className={`w-4 h-4 transition-transform ${tableSort.dir === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -507,6 +511,7 @@ export default function CandidateList({
                   columns[key] ? (
                     <td key={key} className="px-6 py-4 cursor-pointer" onClick={() => onCandidateClick(c)}>
                       {key === 'email' && <span className="text-slate-600">{c.email}</span>}
+                      {key === 'phone' && <span className="text-slate-600">{c.phone || '-'}</span>}
                       {key === 'status' && <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(c.status)} shadow-sm`}>{c.status}</span>}
                       {key === 'experience' && <span className="text-slate-700 font-medium">{c.experience_years} yrs</span>}
                       {key === 'skills' && <span className="text-slate-600">{(c.skills||[]).slice(0,3).join(', ')}{(c.skills||[]).length>3?' +' + ((c.skills||[]).length-3) + ' more':''}</span>}
@@ -531,7 +536,7 @@ export default function CandidateList({
       </div>
 
       {/* Enhanced Card grid */}
-      <div className={`grid gap-6 md:grid-cols-2 lg:grid-cols-3 ${view === 'table' ? 'hidden' : ''} ${view === 'cards' ? '' : 'lg:hidden'}`}>
+      <div className={`grid gap-6 md:grid-cols-2 lg:grid-cols-3 ${view === 'table' ? 'hidden' : view === 'cards' ? 'block' : 'block lg:hidden'}`}>
         {filteredCandidates.map((candidate) => (
           <div
             key={candidate.id}

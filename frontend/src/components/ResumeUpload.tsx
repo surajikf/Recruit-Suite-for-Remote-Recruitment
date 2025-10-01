@@ -10,6 +10,7 @@ export default function ResumeUpload({ onUpload, isLoading }: ResumeUploadProps)
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -50,21 +51,20 @@ export default function ResumeUpload({ onUpload, isLoading }: ResumeUploadProps)
   };
 
   const handleUpload = async () => {
-    if (selectedFiles.length > 0) {
-      // Simulate upload progress
-      setUploadProgress(0);
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            onUpload(selectedFiles);
-            setSelectedFiles([]);
-            setUploadProgress(0);
-            return 0;
-          }
-          return prev + 10;
-        });
-      }, 100);
+    if (selectedFiles.length > 0 && !isUploading && !isLoading) {
+      setIsUploading(true);
+      
+      try {
+        // Call the actual upload
+        await onUpload(selectedFiles);
+        
+        // Clear files after successful upload
+        setSelectedFiles([]);
+      } catch (error) {
+        console.error('Upload failed:', error);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -212,18 +212,14 @@ export default function ResumeUpload({ onUpload, isLoading }: ResumeUploadProps)
               ))}
             </div>
             
-            {/* Upload Progress */}
-            {uploadProgress > 0 && (
+            {/* Upload Status */}
+            {isUploading && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Uploading...</span>
-                  <span className="text-blue-600 font-medium">{uploadProgress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div
-                    style={{ width: `${uploadProgress}%` }}
-                    className="h-full bg-blue-600 rounded-full transition-all duration-300"
-                  />
+                <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+                  <svg className="animate-spin w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="font-medium">Uploading and processing resumes...</span>
                 </div>
               </div>
             )}
@@ -238,10 +234,10 @@ export default function ResumeUpload({ onUpload, isLoading }: ResumeUploadProps)
               </button>
               <button
                 onClick={handleUpload}
-                disabled={isLoading || uploadProgress > 0}
+                disabled={isLoading || isUploading}
                 className="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
-                {isLoading || uploadProgress > 0 ? (
+                {isLoading || isUploading ? (
                   <>
                     <svg
                       className="animate-spin w-4 h-4"
@@ -251,7 +247,7 @@ export default function ResumeUpload({ onUpload, isLoading }: ResumeUploadProps)
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    {uploadProgress > 0 ? `${uploadProgress}%` : 'Processing...'}
+                    Processing...
                   </>
                 ) : (
                   <>

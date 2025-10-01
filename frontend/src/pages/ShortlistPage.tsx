@@ -376,44 +376,49 @@ export default function ShortlistPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="modal-overlay"
             onClick={() => setShowQuickAdd(false)}
           >
             <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+              <div className="modal-header">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">Quick Add Candidate</h3>
-                  <p className="text-sm text-slate-500 mt-1">Add a new candidate to the pipeline</p>
+                  <h3 className="text-xl font-bold text-gray-900">Quick Add Candidate</h3>
+                  <p className="text-sm text-gray-600 mt-1">Add a new candidate to the pipeline</p>
                 </div>
                 <button 
                   onClick={() => setShowQuickAdd(false)} 
-                  className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Close"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="modal-body space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Full Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
                   <input 
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0B79D0]/20 focus:border-[#0B79D0]" 
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
                     placeholder="John Doe" 
                     value={quickAdd.name} 
                     onChange={e => setQuickAdd(v => ({...v, name: e.target.value}))} 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Email *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
                   <input 
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0B79D0]/20 focus:border-[#0B79D0]" 
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
                     placeholder="john@example.com" 
                     type="email"
                     value={quickAdd.email} 
@@ -421,37 +426,44 @@ export default function ShortlistPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Skills (comma separated)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Skills (comma separated)</label>
                   <input 
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0B79D0]/20 focus:border-[#0B79D0]" 
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
                     placeholder="React, Node.js, TypeScript" 
                     value={quickAdd.skills} 
                     onChange={e => setQuickAdd(v => ({...v, skills: e.target.value}))} 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Years of Experience: {quickAdd.experience_years}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Years of Experience: <span className="text-blue-600 font-semibold">{quickAdd.experience_years}</span>
                   </label>
                   <input 
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0B79D0]" 
+                    className="w-full h-2.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" 
                     type="range" 
                     min={0} 
                     max={30}
                     value={quickAdd.experience_years} 
                     onChange={e => setQuickAdd(v => ({...v, experience_years: parseInt(e.target.value)}))} 
                   />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>0 years</span>
+                    <span>30 years</span>
+                  </div>
                 </div>
-                <div className="flex gap-3 pt-4">
-                  <button 
-                    className="flex-1 btn btn-secondary" 
-                    onClick={() => setShowQuickAdd(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    className="flex-1 btn btn-primary" 
-                    onClick={async () => {
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button"
+                  className="btn btn-secondary" 
+                  onClick={() => setShowQuickAdd(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  className="btn btn-primary" 
+                  onClick={async () => {
                       try {
                         // Validate required fields
                         if (!quickAdd.name?.trim()) {
@@ -492,10 +504,12 @@ export default function ShortlistPage() {
                         alert('Failed to add candidate. Please try again.');
                       }
                     }}
-                  >
-                    Add Candidate
-                  </button>
-                </div>
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Candidate
+                </button>
               </div>
             </motion.div>
           </motion.div>

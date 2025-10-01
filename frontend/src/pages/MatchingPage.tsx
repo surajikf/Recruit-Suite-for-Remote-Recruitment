@@ -65,30 +65,45 @@ export default function MatchingPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Job Matching</h1>
-        <p className="text-slate-600">Find the best candidates for your job posting</p>
-        
-        {/* AI Toggle */}
-        <div className="mt-4 flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="useAI"
-              checked={useAI}
-              onChange={(e) => setUseAI(e.target.checked)}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-            />
-            <label htmlFor="useAI" className="text-sm font-medium text-gray-700">
-              🤖 Use AI-Powered Matching
-            </label>
-          </div>
-          <div className="text-xs text-gray-500">
-            {useAI ? 'AI will analyze resume content and job requirements for smarter matching' : 'Traditional keyword-based matching'}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="container px-6 py-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">🎯 Job Matching</h1>
+          <p className="text-base text-slate-600">Find the best candidates for your job posting</p>
+        </div>
+
+        {/* AI Toggle Card */}
+        <div className="mb-6 bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="useAI"
+                    checked={useAI}
+                    onChange={(e) => setUseAI(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="useAI" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                    🤖 Use AI-Powered Matching
+                  </label>
+                </div>
+                <p className="text-xs text-gray-600 mt-1 ml-6">
+                  {useAI ? 'AI will analyze resume content and job requirements for smarter matching' : 'Traditional keyword-based matching'}
+                </p>
+              </div>
+            </div>
+            <div className={`px-4 py-2 rounded-lg text-sm font-medium ${useAI ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+              {useAI ? 'AI Mode Active' : 'Standard Mode'}
+            </div>
           </div>
         </div>
-      </div>
 
       <MatchingEngine
         job={job}
@@ -96,17 +111,18 @@ export default function MatchingPage() {
         onThresholdChange={handleThresholdChange}
         onViewCandidate={handleViewCandidate}
         useAI={useAI}
-      />
-
-      {selectedCandidate && (
-        <CandidatePreview
-          candidate={selectedCandidate}
-          onClose={() => setSelectedCandidate(null)}
-          onMessage={handleMessage}
-          onSchedule={handleSchedule}
-          onShortlist={handleShortlist}
         />
-      )}
+
+        {selectedCandidate && (
+          <CandidatePreview
+            candidate={selectedCandidate}
+            onClose={() => setSelectedCandidate(null)}
+            onMessage={handleMessage}
+            onSchedule={handleSchedule}
+            onShortlist={handleShortlist}
+          />
+        )}
+      </div>
     </div>
   );
 }

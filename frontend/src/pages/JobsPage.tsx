@@ -61,7 +61,7 @@ export default function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('q') || '');
   const [status, setStatus] = useState<'all' | 'draft' | 'published' | 'closed'>('all');
-  const [view, setView] = useState<'auto' | 'table' | 'cards'>('cards');
+  const [view, setView] = useState<'auto' | 'table' | 'cards'>('table');
   const [experienceFilter, setExperienceFilter] = useState<number>(0);
   const [skillFilter, setSkillFilter] = useState<string>('all');
 
@@ -467,66 +467,73 @@ export default function JobsPage() {
           </motion.button>
         </motion.div>
 
-        {/* Templates Modal */}
+        {/* Templates Modal - Simplified */}
         <AnimatePresence>
           {showTemplates && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+              className="modal-overlay"
               onClick={() => setShowTemplates(false)}
             >
               <motion.div
-                initial={{ scale: 0.9, y: 20 }}
+                initial={{ scale: 0.95, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8"
+                exit={{ scale: 0.95, y: 20 }}
+                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between mb-6">
+                {/* Simple Header */}
+                <div className="modal-header">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Job Templates</h2>
-                    <p className="text-slate-600 mt-1">Start with a pre-configured template</p>
+                    <h2 className="text-2xl font-bold text-gray-900">Job Templates</h2>
+                    <p className="text-gray-600 mt-1">Start with a pre-configured template</p>
                   </div>
-                  <button onClick={() => setShowTemplates(false)} className="text-slate-400 hover:text-slate-600">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button 
+                    onClick={() => setShowTemplates(false)} 
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label="Close"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {JOB_TEMPLATES.map((template, index) => (
-                    <motion.div
-                      key={template.name}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ scale: 1.02 }}
-                      className="border-2 border-slate-200 rounded-xl p-6 hover:border-[#0B79D0] cursor-pointer transition-all hover:shadow-lg"
-                      onClick={() => handleUseTemplate(template)}
-                    >
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-gradient-to-br from-[#0B79D0] to-[#0a6cb9] rounded-xl mx-auto mb-4 flex items-center justify-center text-white text-2xl">
-                          💼
-                        </div>
-                        <h3 className="font-bold text-slate-900 text-lg mb-2">{template.name}</h3>
-                        <p className="text-sm text-slate-600 mb-4">{template.template.experience_min}-{template.template.experience_max} yrs</p>
-                        <div className="flex flex-wrap gap-1 justify-center">
-                          {template.template.skills.slice(0, 3).map(skill => (
-                            <span key={skill} className="text-xs px-2 py-1 bg-slate-100 rounded-full">{skill}</span>
-                          ))}
+                {/* Template Cards */}
+                <div className="modal-body">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {JOB_TEMPLATES.map((template) => (
+                      <div
+                        key={template.name}
+                        className="border-2 border-gray-200 rounded-xl p-5 hover:border-blue-500 cursor-pointer transition-all hover:shadow-md"
+                        onClick={() => handleUseTemplate(template)}
+                      >
+                        <div className="text-center">
+                          <div className="w-14 h-14 bg-blue-600 rounded-lg mx-auto mb-3 flex items-center justify-center text-white text-2xl">
+                            💼
+                          </div>
+                          <h3 className="font-bold text-gray-900 mb-1">{template.name}</h3>
+                          <p className="text-sm text-gray-600 mb-3">{template.template.experience_min}-{template.template.experience_max} years</p>
+                          <div className="flex flex-wrap gap-1.5 justify-center">
+                            {template.template.skills.slice(0, 3).map(skill => (
+                              <span key={skill} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-md">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </motion.div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-slate-200 text-center">
+                {/* Footer */}
+                <div className="modal-footer justify-center">
                   <button
                     onClick={() => { setShowTemplates(false); setShowCreateForm(true); }}
-                    className="text-[#0B79D0] font-medium hover:underline"
+                    className="text-blue-600 hover:text-blue-700 font-medium text-sm"
                   >
                     Or create a custom job from scratch →
                   </button>
@@ -557,118 +564,125 @@ export default function JobsPage() {
           />
         )}
 
-        {/* Job Detail Modal */}
+        {/* Job Detail Modal - Simplified */}
         <AnimatePresence>
           {selectedJob && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+              className="modal-overlay"
               onClick={() => setSelectedJob(null)}
             >
               <motion.div
-                initial={{ scale: 0.9, y: 20 }}
+                initial={{ scale: 0.95, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+                exit={{ scale: 0.95, y: 20 }}
+                className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Header */}
-                <div className="bg-gradient-to-r from-[#0B79D0] to-[#0a6cb9] p-8 text-white">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h2 className="text-3xl font-bold mb-2">{selectedJob.title}</h2>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-4 py-1.5 rounded-xl font-semibold text-sm ${
-                          selectedJob.status === 'published' ? 'bg-green-100 text-green-800' : 
-                          selectedJob.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {selectedJob.status.toUpperCase()}
-                        </span>
-                        <span className="text-white/80">📅 {new Date(selectedJob.created_at).toLocaleDateString()}</span>
-                      </div>
+                {/* Simple Header */}
+                <div className="modal-header">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{selectedJob.title}</h2>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold ${
+                        selectedJob.status === 'published' ? 'bg-green-100 text-green-800' : 
+                        selectedJob.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedJob.status === 'published' ? '✓ ' : ''}
+                        {selectedJob.status.charAt(0).toUpperCase() + selectedJob.status.slice(1)}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        📅 {new Date(selectedJob.created_at).toLocaleDateString()}
+                      </span>
                     </div>
-                    <button onClick={() => setSelectedJob(null)} className="text-white/80 hover:text-white">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </div>
+                  <button 
+                    onClick={() => setSelectedJob(null)} 
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label="Close"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Clean Content */}
+                <div className="modal-body space-y-6">
+                  {/* Description */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                    </button>
+                      Description
+                    </h3>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-gray-700 text-sm leading-relaxed">
+                        {selectedJob.description || 'No description provided'}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Content */}
-                <div className="p-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Left Column */}
-                    <div className="space-y-6">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200">
-                        <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          Description
-                        </h3>
-                        <p className="text-slate-700 leading-relaxed">{selectedJob.description || 'No description provided'}</p>
-                      </div>
-
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 border border-green-200">
-                        <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          </svg>
-                          Location
-                        </h3>
-                        <p className="text-slate-700 font-medium">{selectedJob.location || 'Remote'}</p>
+                  {/* Info Grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Location */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        </svg>
+                        Location
+                      </h3>
+                      <div className="bg-green-50 rounded-lg p-3">
+                        <p className="text-gray-900 font-medium text-sm">{selectedJob.location || 'Remote'}</p>
                       </div>
                     </div>
 
-                    {/* Right Column */}
-                    <div className="space-y-6">
-                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 border border-purple-200">
-                        <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                          </svg>
-                          Required Skills
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedJob.skills.map((skill) => (
-                            <motion.span
-                              key={skill}
-                              initial={{ opacity: 0, scale: 0 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              whileHover={{ scale: 1.1 }}
-                              className="px-3 py-1.5 bg-white text-purple-700 rounded-lg text-sm font-semibold shadow-sm border border-purple-200"
-                            >
-                              {skill}
-                            </motion.span>
-                          ))}
-                        </div>
+                    {/* Experience */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Experience
+                      </h3>
+                      <div className="bg-orange-50 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-orange-600">{selectedJob.experience_min} - {selectedJob.experience_max}</p>
+                        <p className="text-xs text-gray-600">years</p>
                       </div>
+                    </div>
+                  </div>
 
-                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 border border-orange-200">
-                        <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Experience Required
-                        </h3>
-                        <div className="bg-white rounded-lg p-4 text-center">
-                          <p className="text-3xl font-bold text-orange-600">{selectedJob.experience_min} - {selectedJob.experience_max}</p>
-                          <p className="text-sm text-slate-600 mt-1">years</p>
-                        </div>
-                      </div>
+                  {/* Skills */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      Required Skills
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedJob.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium"
+                        >
+                          {skill}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Footer Actions */}
-                <div className="p-6 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                {/* Simple Footer */}
+                <div className="modal-footer">
                   <button
                     onClick={() => { setSelectedJob(null); handleEditJob(selectedJob); }}
-                    className="px-6 py-3 border-2 border-[#0B79D0] text-[#0B79D0] rounded-xl hover:bg-[#0B79D0]/5 font-semibold flex items-center gap-2"
+                    className="btn btn-secondary flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -677,7 +691,7 @@ export default function JobsPage() {
                   </button>
                   <Link
                     to={`/jobs/${selectedJob.id}/matches`}
-                    className="px-6 py-3 bg-gradient-to-r from-[#0B79D0] to-[#0a6cb9] text-white rounded-xl hover:shadow-lg font-semibold flex items-center gap-2"
+                    className="btn btn-primary flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

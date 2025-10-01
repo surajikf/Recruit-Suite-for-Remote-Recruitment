@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IKF Recruit Suite</title>
-    <!-- SPA redirect script for GitHub Pages -->
+    <!-- SPA redirect script for GitHub Pages - Fixed for base path -->
     <script type="text/javascript">
       (function(l) {
         if (l.search[1] === '/' ) {
@@ -18,7 +18,23 @@
               l.pathname.slice(0, -1) + decoded + l.hash
           );
         }
-      }(window.location))
+      }(window.location));
+      
+      // Handle base path for local dev and production
+      (function() {
+        var base = '/Recruit-Suite-for-Remote-Recruitment/';
+        var path = window.location.pathname;
+        
+        // Only redirect if we're not already on the base path
+        if (path === '/' || (path !== base && !path.startsWith(base))) {
+          // Don't show warning on development server
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            if (path === '/' || !path.startsWith(base)) {
+              window.location.pathname = base;
+            }
+          }
+        }
+      })();
     </script>
   </head>
   <body>

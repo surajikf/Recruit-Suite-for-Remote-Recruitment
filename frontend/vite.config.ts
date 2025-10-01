@@ -7,6 +7,8 @@ export default defineConfig({
   base: '/Recruit-Suite-for-Remote-Recruitment/',
   server: {
     port: 5173,
+    strictPort: false,
+    open: '/Recruit-Suite-for-Remote-Recruitment/',
     proxy: {
       '/api': {
         target: 'http://localhost:4000',

@@ -221,7 +221,7 @@ export default function JobList({ jobs, onJobClick, onCreateJob, onEditJob, view
       </div>
 
       {/* Compact table view */}
-      <div className={`${view === 'cards' ? 'hidden' : ''} ${view === 'table' ? '' : 'hidden lg:block'} bg-white rounded-card border border-gray-200 overflow-hidden`}>
+      <div className={`${view === 'cards' ? 'hidden' : view === 'table' ? 'block' : 'hidden lg:block'} bg-white rounded-card border border-gray-200 overflow-hidden`}>
         <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
           <div className="flex items-center gap-3 text-sm">
             <span className="text-gray-600">Columns:</span>
@@ -321,7 +321,7 @@ export default function JobList({ jobs, onJobClick, onCreateJob, onEditJob, view
       </div>
 
       {/* Card grid */}
-      <div className={`grid gap-6 md:grid-cols-2 lg:grid-cols-3 ${view === 'table' ? 'hidden' : ''} ${view === 'cards' ? '' : 'lg:hidden'}`}>
+      <div className={`grid gap-6 md:grid-cols-2 lg:grid-cols-3 ${view === 'table' ? 'hidden' : view === 'cards' ? 'block' : 'block lg:hidden'}`}>
         {jobs.map((job) => (
           <div
             key={job.id}
