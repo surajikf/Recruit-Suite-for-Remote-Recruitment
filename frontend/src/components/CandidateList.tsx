@@ -435,6 +435,15 @@ export default function CandidateList({
         <table className="w-full text-sm">
           <thead className="sticky top-[56px] bg-gradient-to-r from-slate-100 to-slate-50 z-10">
             <tr className="text-left border-b border-slate-200">
+              <th className="px-4 py-4 w-12">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size > 0 && selectedIds.size === filteredCandidates.length}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  title="Select all"
+                />
+              </th>
               <th className="px-6 py-4 font-bold text-slate-700 cursor-pointer relative hover:text-blue-600 transition-colors" style={{ width: colWidths.name ? colWidths.name : undefined }} onClick={()=>setTableSort(s=>({key:'name', dir: s.key==='name'&&s.dir==='asc'?'desc':'asc'}))}>
                 <div className="flex items-center gap-2">
                   Name
